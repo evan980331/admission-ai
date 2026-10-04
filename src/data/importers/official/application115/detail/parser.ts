@@ -1,5 +1,6 @@
 import { parse, HTMLElement } from "node-html-parser";
 import { DETAIL_PARSER_VERSION, DETAIL_YEAR } from "./types";
+import { parseLayoutB } from "./layout-b";
 import type {
   ApcsScreening,
   DetailIssue,
@@ -24,6 +25,7 @@ export interface ParseOptions {
 }
 
 const KNOWN_SUBJECTS = ["國文", "英文", "數學A", "數學B", "社會", "自然", "英聽", "術科"];
+export { KNOWN_SUBJECTS };
 
 const BASIC_LABELS: Record<string, string> = {
   "校系代碼": "departmentCode",
@@ -40,9 +42,13 @@ const BASIC_LABELS: Record<string, string> = {
   "榜示": "resultDate",
   "甄選總成績複查截止": "recheckDeadline",
   "離島外加名額縣市別限制": "offshoreRestriction",
+  // Layout-B label variants (desktop template, same meaning).
+  "繳交資料截止": "materialDeadline",
+  "總成績複查截止": "recheckDeadline",
 };
+export { BASIC_LABELS };
 
-function clean(s: string): string {
+export function clean(s: string): string {
   return s
     .replace(/\u00a0/g, " ")
     .replace(/[ \t]+/g, " ")
@@ -62,24 +68,24 @@ function decodeEntities(s: string): string {
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
 }
 
-function cellText(el: HTMLElement | null): string {
+export function cellText(el: HTMLElement | null): string {
   if (!el) return "";
   return clean(decodeEntities(el.innerHTML.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]*>/g, "")));
 }
 
-function toNull(s: string): string | null {
+export function toNull(s: string): string | null {
   const t = s.trim();
   return t === "" || t === "--" || t === "無" || t === "(無)" ? null : t;
 }
 
-function toInt(s: string): number | null {
+export function toInt(s: string): number | null {
   const t = s.trim().replace(/,/g, "");
   if (t === "" || t === "--" || t === "無" || t === "(無)") return null;
   const n = Number(t);
   return Number.isInteger(n) ? n : null;
 }
 
-function toRatio(s: string): number | null {
+export function toRatio(s: string): number | null {
   const t = s.trim();
   if (t === "" || t === "--") return null;
   const n = Number(t);
@@ -104,18 +110,24 @@ function sectionById(root: HTMLElement, id: string): HTMLElement | null {
 }
 
 export function parseDetailHtml(html: string, opts: ParseOptions): DetailParseResult {
-  const issues: DetailIssue[] = [];
-  const unmapped: string[] = [];
-  const rawFields: Record<string, string> = {};
-  const err = (check: string, detail: string) => issues.push({ level: "error", check, detail });
-  const warn = (check: string, detail: string) => issues.push({ level: "warning", check, detail });
-
   let root;
   try {
     root = parse(html);
   } catch (e) {
     return { record: null, issues: [{ level: "error", check: "parse", detail: `HTML parse failed: ${(e as Error).message}` }] };
   }
+  // Layout dispatch: mobile template carries #BASIC et al.; the desktop
+  // single-table template (td.school_title / td.Lb) goes to layout-B.
+  // Both produce the same canonical DetailRecord.
+  if (!root.querySelector("#BASIC")) {
+    return parseLayoutB(root, opts);
+  }
+
+  const issues: DetailIssue[] = [];
+  const unmapped: string[] = [];
+  const rawFields: Record<string, string> = {};
+  const err = (check: string, detail: string) => issues.push({ level: "error", check, detail });
+  const warn = (check: string, detail: string) => issues.push({ level: "warning", check, detail });
 
   // ---- Title: school + department ----
   const titleCell = root.querySelector('td[bgcolor="#1A4899"]');

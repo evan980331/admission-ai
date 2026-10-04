@@ -1,4 +1,4 @@
-# CAC 115 Detail HTML（P3.7）
+# CAC 115 Detail HTML（P3.7＋layout-B）
 
 > 「P3.7 僅解析已取得的官方 HTML fixture，不進行批量抓取，也不繞過 robots.txt。」
 > cac.edu.tw robots 全站 `Disallow: /`，P2.5 crawler 維持拒絕批量；本 PoC 只讀
@@ -19,6 +19,22 @@
 
 注意：頁內 HTML 註解藏有模板佔位符（centertimes／telclowest 等），parser 只查
 真實 section 自然排除；validator 另有 artifact 检查，佔位符外洩即 error。
+
+## Layout B（桌機模板，P3.13 追加）
+
+- 來源：`.../apply115/system/ColQry_115xappLyfOrStu_Azd5gP29/html/115_XXXXXX.htm`
+ （與行動版同檔名、不同模板；皆 UTF-8，亂碼皆為終端顯示問題，bytes 乾淨）。
+- 特徵：單一 `<table>`、無 section id；`td.school_title`（`div.colname`校／
+  `div.gsdname`系）、`td.Lb` label＋`td.Rb` 值、rowspan=7 的 `td.g3`
+  grade-list 欄（科目／檢定／倍率／採計／佔比／指定項目／檢定2／佔比2
+  各一格、`<br>` 分列對齊）、`td.stestdesc_ft2`（甄試說明）、`td.note_ft`（備註）。
+- 標籤差異：`繳交資料截止`（=收件截止）、`總成績複查截止`（=甄選總成績複查截止），
+  語義相同；`離島外加名額縣市別限制` 的值可落在下方列（rowspan 版式），
+  以值形狀（`N名限XX縣`）回補並留痕，找不到就 null＋warning。
+- 分派：有 `#BASIC` 走 layout-A（原程式不動），否則 layout-B；
+  兩者輸出同一 canonical `DetailRecord`（001012 雙版逐欄一致，已測試鎖定）。
+- layout-B 的 APCS 內嵌表結構尚未見過實例：偵測到標記但解不出項目時記
+  warning＋存原文，不猜。
 
 ## 欄位 mapping
 
