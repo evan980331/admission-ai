@@ -23,6 +23,7 @@
     "data:audit-official-coverage": "tsx scripts/audit-official-coverage.ts",
     "data:import-official-local": "tsx scripts/import-official-local.ts",
     "data:import-official-browser": "tsx scripts/import-official-browser.ts",
+    "data:build-official-dataset": "tsx scripts/build-official-dataset.ts",
     "validate": "tsx scripts/validate.ts"
   },
   "dependencies": {
