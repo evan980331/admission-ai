@@ -105,6 +105,8 @@ export interface DbNotice {
 
 export interface DbAdmissionRecords {
   header: AdmissionHeaderRecord;
+  firstStageWeight: string | null;
+  secondStageWeight: string | null;
   subjects: DbSubjectRule[];
   sequences: DbSequenceRule[];
   secondStage: DbSecondStageItem[];
@@ -138,6 +140,8 @@ export function toDbRecords(canonical: CanonicalAdmissionDetail): DbAdmissionRec
       quota: canonical.identity.quota,
       requirements,
     },
+    firstStageWeight: canonical.firstStage.overallWeight,
+    secondStageWeight: canonical.secondStage.overallWeight,
     subjects: canonical.firstStage.subjectRules.map((s) => ({
       subject: s.subject,
       requirement: s.requirement,

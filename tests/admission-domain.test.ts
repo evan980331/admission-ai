@@ -187,9 +187,12 @@ describe("loader statement builders (pure, no DB)", () => {
     const s = buildHeaderUpsert(db, lookups);
     expect(s.text).toContain("ON CONFLICT (year, department_id, program_id) DO UPDATE");
     expect(s.text).toContain("RETURNING id");
-    expect(s.values).toHaveLength(19);
+    expect(s.values).toHaveLength(22);
     expect(s.values.slice(11, 17)).toEqual([null, null, null, null, null, null]);
     expect(s.values[3]).toBe(43);
+    expect(s.values[19]).toContain("115_001022.htm");
+    expect(s.values[20]).toBe("20%");
+    expect(s.values[21]).toBeNull();
   });
   it("children delete covers all 8 tables; inserts match record counts", () => {
     const dels = buildChildDelete("a1");
@@ -242,5 +245,13 @@ describe("003 migration (static, offline)", () => {
     }
     // backward compat: legacy ratio columns stay in 001 (deprecated-in-practice, not dropped)
     expect(sql001).toContain("screening_ratio_1");
+  });
+  it("004 adds per-department source/weight columns, additive only", () => {
+    const sql004 = fs.readFileSync(path.join(dir, "004_admission_source_fields.sql"), "utf8");
+    for (const col of ["source_url", "first_stage_weight", "second_stage_weight"]) {
+      expect(sql004).toContain(`ADD COLUMN IF NOT EXISTS ${col}`);
+    }
+    expect(sql004).not.toMatch(/DROP\s+(TABLE|COLUMN)/i);
+    expect(sql004).toContain("department_admissions");
   });
 });

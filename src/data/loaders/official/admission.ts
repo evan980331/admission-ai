@@ -57,7 +57,7 @@ export function ensureSourceStatements(sourceName: string, dataVersion: string):
 export function buildHeaderUpsert(records: DbAdmissionRecords, lookups: LoaderLookups): SqlStatement {
   const r = records.header.requirements;
   return {
-    text: `INSERT INTO department_admissions (year, department_id, program_id, quota, chinese_requirement, english_requirement, math_a_requirement, math_b_requirement, social_requirement, science_requirement, english_listening_requirement, screening_ratio_1, screening_ratio_2, screening_ratio_3, screening_score_1, screening_score_2, screening_score_3, final_quota, source_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) ON CONFLICT (year, department_id, program_id) DO UPDATE SET quota = EXCLUDED.quota, chinese_requirement = EXCLUDED.chinese_requirement, english_requirement = EXCLUDED.english_requirement, math_a_requirement = EXCLUDED.math_a_requirement, math_b_requirement = EXCLUDED.math_b_requirement, social_requirement = EXCLUDED.social_requirement, science_requirement = EXCLUDED.science_requirement, english_listening_requirement = EXCLUDED.english_listening_requirement, source_id = EXCLUDED.source_id, updated_at = now() RETURNING id`,
+    text: `INSERT INTO department_admissions (year, department_id, program_id, quota, chinese_requirement, english_requirement, math_a_requirement, math_b_requirement, social_requirement, science_requirement, english_listening_requirement, screening_ratio_1, screening_ratio_2, screening_ratio_3, screening_score_1, screening_score_2, screening_score_3, final_quota, source_id, source_url, first_stage_weight, second_stage_weight) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) ON CONFLICT (year, department_id, program_id) DO UPDATE SET quota = EXCLUDED.quota, chinese_requirement = EXCLUDED.chinese_requirement, english_requirement = EXCLUDED.english_requirement, math_a_requirement = EXCLUDED.math_a_requirement, math_b_requirement = EXCLUDED.math_b_requirement, social_requirement = EXCLUDED.social_requirement, science_requirement = EXCLUDED.science_requirement, english_listening_requirement = EXCLUDED.english_listening_requirement, source_id = EXCLUDED.source_id, source_url = EXCLUDED.source_url, first_stage_weight = EXCLUDED.first_stage_weight, second_stage_weight = EXCLUDED.second_stage_weight, updated_at = now() RETURNING id`,
     values: [
       records.header.academicYear,
       lookups.departmentId,
@@ -78,6 +78,9 @@ export function buildHeaderUpsert(records: DbAdmissionRecords, lookups: LoaderLo
       null,
       null,
       lookups.sourceId,
+      records.provenance.sourceUrl,
+      records.firstStageWeight,
+      records.secondStageWeight,
     ],
   };
 }
