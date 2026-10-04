@@ -64,6 +64,12 @@ Secrets 只允許出現在 `.env.local`／本機環境／Neon secret 管理。
 - P1 本階段：schema + migration + seed + validation + prediction 介面
 - P2（下一步）：官方簡章 parser、import pipeline、data_import_runs 監控、統計模型 v0
 
+## 本機資料管線（P3.11，全離線）
+
+人工下載 CAC 官方 HTML → `data/raw/official/115/application/` →
+`npm run data:import-official-local -- --dry-run` →
+詳見 `docs/data-sources/official-115-local-import.md`。零網路、不寫 DB。
+
 ## 限制（本階段不做）
 
 落點 UI、AI chatbot、OpenAI API、embedding、爬 com.tw、大量爬蟲、錄取機率宣稱。
