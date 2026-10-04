@@ -4,6 +4,7 @@ import { validateDetail } from "../../importers/official/application115/detail/v
 import { toP3Input } from "../../importers/official/application115/detail/normalizer";
 import { captureCurrentPage, listTargets, type HttpGet, type WsEvaluate } from "./cdp";
 import { storeCapture } from "./capture";
+import { deriveSchoolCode } from "./identity";
 import { selectCurrentTab } from "./tabs";
 import { validateCapturedPage, validateTabUrl } from "./validate";
 import { BROWSER_DEFAULT_PORT, type BrowserImportResult } from "./types";
@@ -80,11 +81,14 @@ export async function runBrowserImport(opts: BrowserImportOptions = {}): Promise
     opts.rawDir ?? `${process.cwd()}/data/raw/official/115/application/departments`;
   if (!parsed.record) {
     // Raw HTML is still persisted for forensics, marked parse_error.
+    // URL groups are (year, departmentCode): group 1 is the `115` year
+    // prefix, NOT the school — schoolCode comes from the department code.
     const fallback = sourceUrl.match(/(\d{3})_(\d{6})\.htm/i);
+    const fallbackDept = fallback?.[2] ?? "unknown";
     const stored = storeCapture({
       rawDir,
-      departmentCode: fallback?.[2] ?? "unknown",
-      schoolCode: fallback?.[1] ?? "000",
+      departmentCode: fallbackDept,
+      schoolCode: deriveSchoolCode(fallbackDept) ?? "000",
       sourceUrl,
       browserPort: port,
       page,
@@ -115,7 +119,9 @@ export async function runBrowserImport(opts: BrowserImportOptions = {}): Promise
   const stored = storeCapture({
     rawDir,
     departmentCode: detail.departmentCode,
-    schoolCode: detail.schoolCode,
+    // Content-derived identity (P3.7 record), re-anchored to the
+    // department code so a year prefix can never leak into schoolCode.
+    schoolCode: deriveSchoolCode(detail.departmentCode) ?? detail.schoolCode,
     sourceUrl,
     browserPort: port,
     page,
@@ -132,7 +138,7 @@ export async function runBrowserImport(opts: BrowserImportOptions = {}): Promise
 
   return {
     tabUrl: sourceUrl,
-    schoolCode: detail.schoolCode,
+    schoolCode: deriveSchoolCode(detail.departmentCode) ?? detail.schoolCode,
     schoolName: detail.schoolName,
     departmentCode: detail.departmentCode,
     departmentName: detail.departmentName,

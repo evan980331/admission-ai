@@ -7,6 +7,7 @@ import { assertLoopback } from "../src/data/acquisition/browser/cdp";
 import { isCacDetailTabUrl, selectCurrentTab } from "../src/data/acquisition/browser/tabs";
 import { validateCapturedPage, validateTabUrl } from "../src/data/acquisition/browser/validate";
 import { filenameFor, sha256Hex } from "../src/data/acquisition/browser/capture";
+import { deriveSchoolCode } from "../src/data/acquisition/browser/identity";
 import type { CdpTarget } from "../src/data/acquisition/browser/types";
 
 const FIX = path.join(__dirname, "fixtures", "official", "application115", "detail");
@@ -180,5 +181,60 @@ describe("browser acquisition", () => {
   });
   it("validateCapturedPage rejects non-detail content", () => {
     expect(validateCapturedPage({ tabUrl: CAC("001012"), tabTitle: "t", outerHtml: "<html><body>hi</body></html>" }).ok).toBe(false);
+  });
+});
+
+describe("P3.12 schoolCode identity (departmentCode prefix, never academicYear)", () => {
+  it("16. deriveSchoolCode takes first 3 of 6-digit codes", () => {
+    expect(deriveSchoolCode("001012")).toBe("001");
+    expect(deriveSchoolCode("001592")).toBe("001");
+  });
+  it("17. malformed codes yield null (never guessed)", () => {
+    for (const bad of ["", "115", "00101", "0010123", "ABCDEF", "00A012", "  ", "unknown"]) {
+      expect(deriveSchoolCode(bad)).toBeNull();
+    }
+  });
+  it("18. stored meta schoolCode is 001 for 001012 (not the 115 year prefix)", async () => {
+    const dir = tmp();
+    await runBrowserImport({
+      port: 9222,
+      rawDir: dir,
+      httpGet: mockHttp([tab(CAC("001012"))]),
+      wsEvaluate: mockWs(htmlOf("001012"), CAC("001012")),
+    });
+    const meta = JSON.parse(fs.readFileSync(path.join(dir, "115_001012.htm.meta.json"), "utf8"));
+    expect(meta.departmentCode).toBe("001012");
+    expect(meta.schoolCode).toBe("001");
+    expect(meta.academicYear).toBe(115);
+  });
+  it("19. stored meta schoolCode is 001 for APCS 001592", async () => {
+    const dir = tmp();
+    await runBrowserImport({
+      port: 9222,
+      rawDir: dir,
+      httpGet: mockHttp([tab(CAC("001592"))]),
+      wsEvaluate: mockWs(htmlOf("001592"), CAC("001592")),
+    });
+    const meta = JSON.parse(fs.readFileSync(path.join(dir, "115_001592.htm.meta.json"), "utf8"));
+    expect(meta.departmentCode).toBe("001592");
+    expect(meta.schoolCode).toBe("001");
+    expect(meta.academicYear).toBe(115);
+  });
+  it("20. parse_error fallback derives school from URL dept code, not the year group", async () => {
+    const dir = tmp();
+    const bad =
+      "<html><head><title>x</title></head><body>校系代碼 招生名額 基本資料及時程" +
+      "<table><tr><td>note</td></tr></table>" +
+      `<p>${"filler text ".repeat(60)}</p></body></html>`;
+    await runBrowserImport({
+      port: 9222,
+      rawDir: dir,
+      httpGet: mockHttp([tab(CAC("001012"))]),
+      wsEvaluate: mockWs(bad, CAC("001012")),
+    });
+    const meta = JSON.parse(fs.readFileSync(path.join(dir, "115_001012.htm.meta.json"), "utf8"));
+    expect(meta.departmentCode).toBe("001012");
+    expect(meta.schoolCode).toBe("001");
+    expect(meta.schoolCode).not.toBe("115");
   });
 });
