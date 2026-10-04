@@ -3,8 +3,10 @@ import { validateDetailUrl } from "../../../../discovery/official/application115
 /**
  * Official-source validation for manually downloaded files.
  * Accepted sourceUrl origins, in order:
- *  1. P3.9 sidecar .meta.json next to the file (must pass P3.8 URL policy AND
- *     match the HTML-parsed department code).
+ *  1. P3.9 sidecar .meta.json next to the file (canonical `sourceUrl` as
+ *     written by P3.12 browser capture; legacy `url` still accepted; both
+ *     present-but-different is a conflict, never picked silently) — must
+ *     pass P3.8 URL policy AND match the HTML-parsed department code.
  *  2. Nothing else. Filenames and relative in-page links (Apply_ReviewData.pdf)
  *     are corroboration at best — without metadata the file is source_unverified.
  * Never guess. Never fetch to "confirm".
@@ -41,8 +43,10 @@ export function validateSource(
   if (!v.valid || !v.canonicalUrl) {
     return { ok: false, sourceUrl: metaUrl, reasons: [`fails P3.8 URL policy: ${v.reason}`] };
   }
-  const m = v.canonicalUrl.match(/(\d{3})_(\d{6})\.htm$/i);
-  if (!m) return { ok: false, sourceUrl: metaUrl, reasons: ["no <year>_<6code>.htm in meta URL"] };
+  // Match the filename against the path only: real CDP location.href can
+  // carry a query string (e.g. ?v=1.0), which must not fail the check.
+  const m = parsed.pathname.match(/(\d{3})_(\d{6})\.htm$/i);
+  if (!m) return { ok: false, sourceUrl: metaUrl, reasons: ["no <year>_<6code>.htm in meta URL path"] };
   if (Number(m[1]) !== academicYear) {
     return { ok: false, sourceUrl: metaUrl, reasons: [`meta year ${m[1]} != ${academicYear}`] };
   }

@@ -87,6 +87,12 @@ export function runLocalImport(opts: LocalImportOptions): LocalImportResult {
 
     // Identify via P3.7 (content first; filename only corroborates).
     const meta = readSidecarMeta(f.path);
+    if (meta?.conflict) {
+      const r = fail("source_unverified", [meta.conflict]);
+      results.push(r);
+      errors.push({ path: f.path, sha256: f.sha256, status: r.status, reasons: r.reasons });
+      return;
+    }
     const id = identifyFile(f.path, html, meta?.url ?? `local-file:${path.basename(f.path)}`);
     if (!id.record) {
       const r = fail("unidentified", id.errors.length > 0 ? id.errors : ["P3.7 parser produced no record"]);

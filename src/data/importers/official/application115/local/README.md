@@ -4,7 +4,7 @@
 data/raw/official/115/application/*.htm
   → discover（遞迴，只收 .htm/.html；禁 .pdf/.json/.meta.json）
   → identify（P3.7 重用，內容辨識；檔名僅佐證）
-  → source gate（P3.9 .meta.json＋P3.8 URL 政策＋code 一致；無 meta 即 source_unverified）
+  → source gate（P3.9 .meta.json canonical `sourceUrl`，相容舊 `url`＋P3.8 URL 政策＋code 一致；無 meta 即 source_unverified）
   → P3.7 parse＋validate → P3 normalize（語義不動）
   → data/processed/official/115/local-import/（gitignored）
 ```
