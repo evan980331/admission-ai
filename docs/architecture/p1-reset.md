@@ -247,6 +247,42 @@ R-probability：過早機率宣稱毀信任 → 緩解：placeholder 傳統延�
 
 ## 14. P1-A 完成紀錄（已實作）
 
+## 15. P1-B 完成紀錄（已實作）
+
+- Canonical model：`src/domain/admission/`（`types.ts`、`fromDetail.ts`、
+  `toDbRecords.ts`、`validation.ts`）。`CanonicalAdmissionDetail` 與 P3.7
+  `DetailRecord` 1:1（identity／firstStage(subjectRules＋sequences＋overallWeight)／
+  apcs＋note／specialRequirements 6 kinds／secondStage(items＋整體 null 誠實)／
+  reviewRequirements（結構欄 null＋原文必留）／schedule（ROC→ISO＋原文）／notices／
+  provenance 六元組）。`--` 永不變 0；缺失 null；跨年不比。
+- 合併決策：over_quota＋tie_break 共用 `screening_sequences`（同有序規則形狀，
+  kind 區分）；fee 併 `admission_schedule`（免單欄表）；APCS note 逐列重複（註記）；
+  review 暫單列原文（結構欄 null，待未來 parser 拆分）；interviewNotes 暫無
+  canonical 槽（audit 明示 warning，後續 phase 處理）。
+- Migration：`db/migrations/003_admission_detail.sql`（8 表，IF NOT EXISTS，
+  全 FK `department_admissions(id) ON DELETE CASCADE`；001／002 未動，無 DROP）。
+- `department_admissions` 相容：header upsert 續填 quota＋7 檢定 TEXT（含英聽）；
+  `screening_ratio_1/2/3` 續留 null（detail 路徑已被 subjectRules 取代，實務
+  deprecated，不刪以保 P2 CSV；001 保留斷言鎖定）。
+- Normalizer：`fromDetailRecord`（全映射）→ `toDbRecords`（DB 列集）；
+  舊 `toP2Row`／`toP3Input` 原封不動；新增正向 `canonicalToLegacyP3Input`
+ （quota-only），禁反向。
+- Loader：`src/data/loaders/official/admission.ts`（純 plan：ensure source→
+  FK resolve→header UPSERT RETURNING→children delete+insert，fail-closed 全 rollback、
+  冪等）＋ `scripts/load-official-admission.ts`
+ （`data:load-official-admission`，dry-run 不連 DB）。輸入 dataset.json（entry 內嵌
+  detail；僅 status=ok＋同年載入，其餘報告不靜默丟）。
+- Fixtures：001012（quota 23／國文前標×3／英文均標×6／社會均標×8／40%／二階
+  70分-25%＋筆試×2／tie-break 3／離島連江／fee 1500／5 日期 ISO／review 全碼＋
+  J/K 限制＋OPQ 字數／notes 4）與 001022（quota 43／6 科／英聽 A／20%／二階 3 項／
+  超額 4／tie-break 4 含口試）全斷言；001592 APCS（觀念／實作 4級×5＋note）。
+- Data-loss：`auditCanonicalCompleteness` 對三 fixture errors=0；另含 inventory
+  哨兵（DetailRecord 未來加欄即炸）與 legacy 方向斷言。
+- Provenance：`sourceUrl` 拼寫沿用，desktop 原址（含 `?v=1.0`）一路保留到 loader
+  plan；dataset dry-run 實測兩筆皆 `captured＋normalized`。
+- 未做：UI、LLM、prediction、機率、portfolio／essay／interview、DROP、
+  大規模採集、robots 相關一切。P3 parser／acquisition 行為零變更。
+
 - Domain：`src/domain/student/`（`types.ts`、`validation.ts`、`index.ts`，pure TS，
   無 DB／無網路依賴）。`StudentProfile` 只放 id／academicYear／displayName／
   schoolName／track＋時間戳；成績與偏好分離在各自型別。
