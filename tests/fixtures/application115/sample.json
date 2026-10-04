@@ -1,0 +1,16 @@
+{
+  "_note": "TEST FIXTURE ONLY — not official data. Minimal rows for parser/normalizer tests.",
+  "records": [
+    {
+      "school_code": "902",
+      "school_name": "測試南方大學",
+      "department_code": "902001",
+      "department_name": "測試企管學系",
+      "group_name": "一般組",
+      "quota": "30",
+      "screening_ratio_1": "3",
+      "chinese_requirement": "均標",
+      "english_requirement": "均標"
+    }
+  ]
+}

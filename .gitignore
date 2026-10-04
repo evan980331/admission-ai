@@ -16,6 +16,7 @@ next-env.d.ts
 
 # ---> Neon / DB local artefacts
 .neon/
+.neon
 neon.config.json
 
 # ---> OS / editor

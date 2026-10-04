@@ -13,9 +13,12 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx db/migrate.ts",
     "db:seed": "tsx db/seed.ts",
+    "data:import": "tsx scripts/import-official.ts",
     "validate": "tsx scripts/validate.ts"
   },
   "dependencies": {
+    "@neon/config": "^1.8.3",
+    "@neon/env": "^1.5.0",
     "@neondatabase/serverless": "^0.10.4",
     "dotenv": "^16.4.5",
     "next": "14.2.5",
