@@ -70,6 +70,10 @@ Secrets 只允許出現在 `.env.local`／本機環境／Neon secret 管理。
 `npm run data:import-official-local -- --dry-run` →
 詳見 `docs/data-sources/official-115-local-import.md`。零網路、不寫 DB。
 
+或用自己開好的 Chrome 分頁：`npm run data:import-official-browser`
+（只讀 localhost CDP，不爬 CAC）→
+詳見 `docs/data-sources/official-115-browser-acquisition.md`。
+
 ## 限制（本階段不做）
 
 落點 UI、AI chatbot、OpenAI API、embedding、爬 com.tw、大量爬蟲、錄取機率宣稱。
