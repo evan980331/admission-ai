@@ -1,0 +1,134 @@
+{
+  "academicYear": 115,
+  "schoolCode": "001",
+  "departmentCode": "001022",
+  "schoolName": "國立臺灣大學",
+  "departmentName": "外國語文學系",
+  "quota": 43,
+  "expectedInterviewCount": 108,
+  "genderRequirement": null,
+  "subjectRequirements": [
+    {
+      "subject": "國文",
+      "requirement": "前標",
+      "multiplier": null,
+      "scoreMethod": "*1.00"
+    },
+    {
+      "subject": "英文",
+      "requirement": "頂標",
+      "multiplier": 2.5,
+      "scoreMethod": "*2.00"
+    },
+    {
+      "subject": "數學A",
+      "requirement": "均標",
+      "multiplier": null,
+      "scoreMethod": null
+    },
+    {
+      "subject": "數學B",
+      "requirement": "均標",
+      "multiplier": null,
+      "scoreMethod": null
+    },
+    {
+      "subject": "社會",
+      "requirement": "前標",
+      "multiplier": null,
+      "scoreMethod": "*1.00"
+    },
+    {
+      "subject": "英聽",
+      "requirement": "A級",
+      "multiplier": null,
+      "scoreMethod": null
+    }
+  ],
+  "overallFirstStageWeight": "20%",
+  "overQuotaRules": [
+    "一、學測國文、英文、社會之級分總和",
+    "二、學測國文級分",
+    "三、學測英文級分",
+    "四、學測社會級分"
+  ],
+  "tieBreakingRules": [
+    "一、指定項目甄試成績",
+    "二、英文作文筆試",
+    "三、學科能力測驗成績",
+    "四、英語口試測驗"
+  ],
+  "secondStageItems": [
+    {
+      "name": "審查資料",
+      "requirement": null,
+      "weight": "40%"
+    },
+    {
+      "name": "英文作文筆試",
+      "requirement": null,
+      "weight": "20%"
+    },
+    {
+      "name": "英語口試測驗",
+      "requirement": null,
+      "weight": "20%"
+    }
+  ],
+  "reviewItems": "修課紀錄(A)、課程學習成果(B、E)、多元表現(L、M、N)、學習歷程自述(O、P、Q)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。",
+  "reviewNotes": "多元表現(L.檢定證照)：係指英語能力檢定證明。",
+  "interviewNotes": "1.本系提供考生於報名時填寫口試時段志願序，僅為參考，無法保證排定為最佳時段。\n2.指定項目考試期間：5月16日(星期六)，11:00-12:00筆試；13:30-17:30口試。\n3.各科考試時間、地點於5月13日(星期三)16:00以後公布於本系網站「最新消息-大學部學生事務」。",
+  "extraQuotas": {
+    "indigenous": null,
+    "offshore": null,
+    "vision": null
+  },
+  "applicationFee": 1500,
+  "notificationDate": "115.3.31",
+  "materialDeadline": "115.5.6",
+  "secondStageDate": "115.5.16",
+  "resultDate": "115.6.1",
+  "recheckDeadline": "115.5.27",
+  "offshoreRestriction": null,
+  "notes": [
+    "1.本系參加校內聯合分發，請見「本校重要事項說明」。",
+    "2.聯絡電話：(02)33663216。",
+    "3.本系網址：https://www.forex.ntu.edu.tw/。",
+    "4.通過第一階段篩選者，請務必於報名前至https://reg.aca.ntu.edu.tw/115app.asp詳閱本校招生須知，報名及繳費至5月6日止。"
+  ],
+  "apcs": null,
+  "source": "official",
+  "sourceUrl": "https://www.cac.edu.tw/mobile_apply115/colqRy_Apply_8Rfsd57q/html/115_001022.htm",
+  "retrievedAt": null,
+  "parserVersion": "official-detail-parser-v0.1.0",
+  "dataVersion": "fixture-manual",
+  "rawFields": {
+    "basic:校系代碼": "001022",
+    "basic:招生名額": "43",
+    "basic:性別要求": "無",
+    "basic:預計甄試人數": "108",
+    "basic:原住民外加名額": "無",
+    "basic:離島外加名額": "無",
+    "basic:願景計畫外加名額": "無",
+    "basic:指定項目甄試費": "1500",
+    "basic:寄發(或公告)指定項目甄試通知": "115.3.31",
+    "basic:繳交資料收件截止": "115.5.6",
+    "basic:指定項目甄試日期": "115.5.16",
+    "basic:榜示": "115.6.1",
+    "basic:甄選總成績複查截止": "115.5.27",
+    "basic:離島外加名額縣市別限制": "(無)",
+    "grade:國文": "前標|--|*1.00",
+    "stage2:審查資料": "--|40%",
+    "grade:英文": "頂標|2.5|*2.00",
+    "stage2:英文作文筆試": "--|20%",
+    "grade:數學A": "均標|--|--",
+    "stage2:英語口試測驗": "--|20%",
+    "grade:數學B": "均標|--|--",
+    "grade:社會": "前標|--|*1.00",
+    "grade:英聽": "A級|--|--",
+    "overQuota": " 一、學測國文、英文、社會之級分總和\n　　　　　　　　　　　　　二、學測國文級分\n　　　　　　　　　　　　　三、學測英文級分\n　　　　　　　　　　　　　四、學測社會級分",
+    "review": "項目：\n　修課紀錄(A)、課程學習成果(B、E)、多元表現(L、M、N)、學習歷程自述(O、P、Q)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。\n說明：\n　多元表現(L.檢定證照)：係指英語能力檢定證明。",
+    "interview": "1.本系提供考生於報名時填寫口試時段志願序，僅為參考，無法保證排定為最佳時段。\n2.指定項目考試期間：5月16日(星期六)，11:00-12:00筆試；13:30-17:30口試。\n3.各科考試時間、地點於5月13日(星期三)16:00以後公布於本系網站「最新消息-大學部學生事務」。"
+  },
+  "unmapped": []
+}

@@ -1,0 +1,125 @@
+{
+  "academicYear": 115,
+  "schoolCode": "001",
+  "departmentCode": "001012",
+  "schoolName": "國立臺灣大學",
+  "departmentName": "中國文學系",
+  "quota": 23,
+  "expectedInterviewCount": 69,
+  "genderRequirement": null,
+  "subjectRequirements": [
+    {
+      "subject": "國文",
+      "requirement": "前標",
+      "multiplier": 3,
+      "scoreMethod": "*1.50"
+    },
+    {
+      "subject": "英文",
+      "requirement": "均標",
+      "multiplier": 6,
+      "scoreMethod": "*1.00"
+    },
+    {
+      "subject": "數學A",
+      "requirement": "均標",
+      "multiplier": null,
+      "scoreMethod": null
+    },
+    {
+      "subject": "數學B",
+      "requirement": "均標",
+      "multiplier": null,
+      "scoreMethod": null
+    },
+    {
+      "subject": "社會",
+      "requirement": "均標",
+      "multiplier": 8,
+      "scoreMethod": "*1.00"
+    }
+  ],
+  "overallFirstStageWeight": "40%",
+  "overQuotaRules": [
+    "一、學測國文、英文、社會之級分總和",
+    "二、學測英文級分",
+    "三、學測社會級分"
+  ],
+  "tieBreakingRules": [
+    "一、學科能力測驗成績",
+    "二、語文測驗筆試",
+    "三、寫作筆試"
+  ],
+  "secondStageItems": [
+    {
+      "name": "審查資料",
+      "requirement": "70分",
+      "weight": "25%"
+    },
+    {
+      "name": "語文測驗筆試",
+      "requirement": null,
+      "weight": "20%"
+    },
+    {
+      "name": "寫作筆試",
+      "requirement": null,
+      "weight": "15%"
+    }
+  ],
+  "reviewItems": "修課紀錄(A)、課程學習成果(B、C)、多元表現(F、J、K、N)、學習歷程自述(O、P、Q)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。",
+  "reviewNotes": "1.AOPQN必備，其餘選備。選備至少2項，至多3項。2.B限文史哲小論文，C包含文學創作、編輯報刊、專題報導或文學展演等。BC必選至少1項。FJK至少1項。J限文史哲各類競賽(宜附得獎證明及作品)。K限報刊雜誌公開發表之文學作品或評論。3.OP各600字以內，Q300字以內。O須說明選修與本系領域相關課程之動機理由及心得。",
+  "interviewNotes": "1.筆試時間：5月15日（五）8：40–10：20寫作，10：50–12：30語文測驗。\n2.筆試地點：請於5月14日（四）10：00起至本系網頁查詢。",
+  "extraQuotas": {
+    "indigenous": null,
+    "offshore": "1",
+    "vision": null
+  },
+  "applicationFee": 1500,
+  "notificationDate": "115.3.31",
+  "materialDeadline": "115.5.6",
+  "secondStageDate": "115.5.15",
+  "resultDate": "115.6.1",
+  "recheckDeadline": "115.5.27",
+  "offshoreRestriction": "1名限連江縣",
+  "notes": [
+    "1.本系參加校內聯合分發，請見「本校重要事項說明」。",
+    "2.聯絡電話：（02）33664003。",
+    "3.本系網址：http://www.cl.ntu.edu.tw。",
+    "4.通過第一階段篩選者，請務必於報名前至https://reg.aca.ntu.edu.tw/115app.asp詳閱本校招生須知，報名及繳費至5月6日止。"
+  ],
+  "apcs": null,
+  "source": "official",
+  "sourceUrl": "https://www.cac.edu.tw/mobile_apply115/colqRy_Apply_8Rfsd57q/html/115_001012.htm",
+  "retrievedAt": null,
+  "parserVersion": "official-detail-parser-v0.1.0",
+  "dataVersion": "fixture-manual",
+  "rawFields": {
+    "basic:校系代碼": "001012",
+    "basic:招生名額": "23",
+    "basic:性別要求": "無",
+    "basic:預計甄試人數": "69",
+    "basic:原住民外加名額": "無",
+    "basic:離島外加名額": "1",
+    "basic:願景計畫外加名額": "無",
+    "basic:指定項目甄試費": "1500",
+    "basic:寄發(或公告)指定項目甄試通知": "115.3.31",
+    "basic:繳交資料收件截止": "115.5.6",
+    "basic:指定項目甄試日期": "115.5.15",
+    "basic:榜示": "115.6.1",
+    "basic:甄選總成績複查截止": "115.5.27",
+    "basic:離島外加名額縣市別限制": "1名限連江縣",
+    "grade:國文": "前標|3|*1.50",
+    "stage2:審查資料": "70分|25%",
+    "grade:英文": "均標|6|*1.00",
+    "stage2:語文測驗筆試": "--|20%",
+    "grade:數學A": "均標|--|--",
+    "stage2:寫作筆試": "--|15%",
+    "grade:數學B": "均標|--|--",
+    "grade:社會": "均標|8|*1.00",
+    "overQuota": " 一、學測國文、英文、社會之級分總和\n　　　　　　　　　　　　　二、學測英文級分\n　　　　　　　　　　　　　三、學測社會級分",
+    "review": "項目：\n　修課紀錄(A)、課程學習成果(B、C)、多元表現(F、J、K、N)、學習歷程自述(O、P、Q)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。\n說明：\n　1.AOPQN必備，其餘選備。選備至少2項，至多3項。2.B限文史哲小論文，C包含文學創作、編輯報刊、專題報導或文學展演等。BC必選至少1項。FJK至少1項。J限文史哲各類競賽(宜附得獎證明及作品)。K限報刊雜誌公開發表之文學作品或評論。3.OP各600字以內，Q300字以內。O須說明選修與本系領域相關課程之動機理由及心得。",
+    "interview": "1.筆試時間：5月15日（五）8：40–10：20寫作，10：50–12：30語文測驗。\n2.筆試地點：請於5月14日（四）10：00起至本系網頁查詢。"
+  },
+  "unmapped": []
+}

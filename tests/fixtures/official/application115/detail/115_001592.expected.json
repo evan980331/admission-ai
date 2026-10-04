@@ -1,0 +1,120 @@
+{
+  "academicYear": 115,
+  "schoolCode": "001",
+  "departmentCode": "001592",
+  "schoolName": "國立臺灣大學",
+  "departmentName": "資訊工程學系(APCS組)",
+  "quota": 4,
+  "expectedInterviewCount": 20,
+  "genderRequirement": null,
+  "subjectRequirements": [
+    {
+      "subject": "英文",
+      "requirement": "前標",
+      "multiplier": null,
+      "scoreMethod": "*1.25"
+    },
+    {
+      "subject": "數學A",
+      "requirement": "前標",
+      "multiplier": 10,
+      "scoreMethod": "*2.00"
+    },
+    {
+      "subject": "自然",
+      "requirement": "前標",
+      "multiplier": null,
+      "scoreMethod": null
+    }
+  ],
+  "overallFirstStageWeight": "20%",
+  "overQuotaRules": [
+    "一、學測英文、數學A、自然之級分總和"
+  ],
+  "tieBreakingRules": [
+    "一、審查資料",
+    "二、數學筆試",
+    "三、學科能力測驗成績"
+  ],
+  "secondStageItems": [
+    {
+      "name": "審查資料",
+      "requirement": "70分",
+      "weight": "60%"
+    },
+    {
+      "name": "數學筆試",
+      "requirement": null,
+      "weight": "20%"
+    }
+  ],
+  "reviewItems": "修課紀錄(A)、課程學習成果(B、C、D)、多元表現(F、J、M、N)、學習歷程自述(P、Q)、其他(R.本系個人資料表、S.有利審查之證明)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。",
+  "reviewNotes": "1.其他(R.本系個人資料表)：請至本系網站填寫，列印簽名後掃描上傳。2.其他(S.有利審查之證明): (1)可檢附各項能力、活動及表現之有利證明。(2)若為資優班學生請附證明。",
+  "interviewNotes": "1.數學筆試採用電資學院共同試題，考生如有報考電機系、資工系(含APCS組)，參加筆試之成績將分送兩系使用。\n2.筆試時間:數學5月17日(日)下午13:30-15:10。\n3.筆試試場及相關事宜請於5月12日(二)中午12時起至https://reg.aca.ntu.edu.tw/115app.asp查詢。\n4.注意事項:不可使用計算器，請帶身分證正本應考。",
+  "extraQuotas": {
+    "indigenous": null,
+    "offshore": null,
+    "vision": null
+  },
+  "applicationFee": 1500,
+  "notificationDate": "115.3.31",
+  "materialDeadline": "115.5.6",
+  "secondStageDate": "115.5.17",
+  "resultDate": "115.6.1",
+  "recheckDeadline": "115.5.27",
+  "offshoreRestriction": null,
+  "notes": [
+    "1.本系參加校內聯合分發，請見「本校重要事項說明」。",
+    "2.聯絡電話(02)33664888轉250。",
+    "3.本系網址:http://www.csie.ntu.edu.tw。",
+    "4.通過第一階段篩選者，請務必於報名前至https://reg.aca.ntu.edu.tw/115app.asp詳閱本校招生須知，報名及繳費至5月6日止。"
+  ],
+  "apcs": {
+    "items": [
+      {
+        "subject": "程式設計觀念題",
+        "requirement": "4級",
+        "multiplier": null
+      },
+      {
+        "subject": "程式設計實作題",
+        "requirement": "4級",
+        "multiplier": 5
+      }
+    ],
+    "note": "須參加APCS檢測\n(無)"
+  },
+  "source": "official",
+  "sourceUrl": "https://www.cac.edu.tw/mobile_apply115/colqRy_Apply_8Rfsd57q/html/115_001592.htm",
+  "retrievedAt": null,
+  "parserVersion": "official-detail-parser-v0.1.0",
+  "dataVersion": "fixture-manual",
+  "rawFields": {
+    "basic:校系代碼": "001592",
+    "basic:招生名額": "4",
+    "basic:性別要求": "無",
+    "basic:預計甄試人數": "20",
+    "basic:原住民外加名額": "無",
+    "basic:離島外加名額": "無",
+    "basic:願景計畫外加名額": "無",
+    "basic:指定項目甄試費": "1500",
+    "basic:寄發(或公告)指定項目甄試通知": "115.3.31",
+    "basic:繳交資料收件截止": "115.5.6",
+    "basic:指定項目甄試日期": "115.5.17",
+    "basic:榜示": "115.6.1",
+    "basic:甄選總成績複查截止": "115.5.27",
+    "basic:離島外加名額縣市別限制": "(無)",
+    "grade:英文": "前標|--|*1.25",
+    "stage2:審查資料": "70分|60%",
+    "grade:數學A": "前標|10|*2.00",
+    "stage2:數學筆試": "--|20%",
+    "grade:自然": "前標|--|--",
+    "overQuota": " 一、學測英文、數學A、自然之級分總和",
+    "apcs": "程式設計觀念題:4級:null;程式設計實作題:4級:5",
+    "review": "項目：\n　修課紀錄(A)、課程學習成果(B、C、D)、多元表現(F、J、M、N)、學習歷程自述(P、Q)、其他(R.本系個人資料表、S.有利審查之證明)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。\n說明：\n　1.其他(R.本系個人資料表)：請至本系網站填寫，列印簽名後掃描上傳。2.其他(S.有利審查之證明): (1)可檢附各項能力、活動及表現之有利證明。(2)若為資優班學生請附證明。",
+    "interview": "1.數學筆試採用電資學院共同試題，考生如有報考電機系、資工系(含APCS組)，參加筆試之成績將分送兩系使用。\n2.筆試時間:數學5月17日(日)下午13:30-15:10。\n3.筆試試場及相關事宜請於5月12日(二)中午12時起至https://reg.aca.ntu.edu.tw/115app.asp查詢。\n4.注意事項:不可使用計算器，請帶身分證正本應考。"
+  },
+  "unmapped": [
+    "4 empty filler rows in grade matrix (layout padding)"
+  ]
+}

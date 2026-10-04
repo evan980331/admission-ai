@@ -40,3 +40,10 @@ data/processed/*
 data/raw/official/
 data/raw/**/*.html
 data/raw/**/*.htm
+# P3 normalization outputs (derived data, never commit)
+data/processed/historical/
+# P3.6 cross-validation outputs + third-party raws (never commit)
+data/processed/source-cross-validation/
+data/raw/third-party/
+# P3.9 acquisition raws (real fetched HTML must never enter git)
+data/raw/official/115/application/detail/

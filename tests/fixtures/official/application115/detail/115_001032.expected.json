@@ -1,0 +1,120 @@
+{
+  "academicYear": 115,
+  "schoolCode": "001",
+  "departmentCode": "001032",
+  "schoolName": "國立臺灣大學",
+  "departmentName": "歷史學系",
+  "quota": 23,
+  "expectedInterviewCount": 69,
+  "genderRequirement": null,
+  "subjectRequirements": [
+    {
+      "subject": "國文",
+      "requirement": "前標",
+      "multiplier": 6,
+      "scoreMethod": "*1.00"
+    },
+    {
+      "subject": "英文",
+      "requirement": "前標",
+      "multiplier": 4,
+      "scoreMethod": "*1.00"
+    },
+    {
+      "subject": "數學A",
+      "requirement": "均標",
+      "multiplier": null,
+      "scoreMethod": null
+    },
+    {
+      "subject": "數學B",
+      "requirement": "均標",
+      "multiplier": null,
+      "scoreMethod": null
+    },
+    {
+      "subject": "社會",
+      "requirement": "前標",
+      "multiplier": 3,
+      "scoreMethod": "*1.00"
+    }
+  ],
+  "overallFirstStageWeight": "40%",
+  "overQuotaRules": [
+    "一、學測國文、英文、社會之級分總和",
+    "二、學測英文級分",
+    "三、學測國文級分"
+  ],
+  "tieBreakingRules": [
+    "一、筆試",
+    "二、審查資料",
+    "三、學科能力測驗成績",
+    "四、學測社會級分"
+  ],
+  "secondStageItems": [
+    {
+      "name": "審查資料",
+      "requirement": "75分",
+      "weight": "40%"
+    },
+    {
+      "name": "筆試",
+      "requirement": null,
+      "weight": "20%"
+    }
+  ],
+  "reviewItems": "修課紀錄(A)、課程學習成果(B、E)、多元表現(F、J、K、L、N)、學習歷程自述(O、P、Q)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。",
+  "reviewNotes": "考生請詳閱本校歷史學系「書面資料準備指引」。",
+  "interviewNotes": "一、筆試時間：5月14日(四)14:20-16:20。\n二、筆試地點：5月13日(三)13:00併同「考生應試須知」公告於本系網站，不另通知。\n三、考生座位表：5月14日(四)13:00後，公告張貼於筆試試場外。\n四、筆試為一科考試，時間120分鐘，內容包含「史學思維申論」和「文獻閱讀摘要」。",
+  "extraQuotas": {
+    "indigenous": null,
+    "offshore": null,
+    "vision": null
+  },
+  "applicationFee": 1500,
+  "notificationDate": "115.3.31",
+  "materialDeadline": "115.5.6",
+  "secondStageDate": "115.5.14",
+  "resultDate": "115.6.1",
+  "recheckDeadline": "115.5.27",
+  "offshoreRestriction": null,
+  "notes": [
+    "1.本系參加校內聯合分發，請見「本校重要事項說明」。",
+    "2.聯絡電話：(02)33664704。",
+    "3.本系網址：http://www.history.ntu.edu.tw。",
+    "4.通過第一階段篩選者，請務必於報名前至http://reg.aca.ntu.edu.tw/115app.asp詳閱本校報名須知，報名及繳費至5月6日止。"
+  ],
+  "apcs": null,
+  "source": "official",
+  "sourceUrl": "https://www.cac.edu.tw/mobile_apply115/colqRy_Apply_8Rfsd57q/html/115_001032.htm",
+  "retrievedAt": null,
+  "parserVersion": "official-detail-parser-v0.1.0",
+  "dataVersion": "fixture-manual",
+  "rawFields": {
+    "basic:校系代碼": "001032",
+    "basic:招生名額": "23",
+    "basic:性別要求": "無",
+    "basic:預計甄試人數": "69",
+    "basic:原住民外加名額": "無",
+    "basic:離島外加名額": "無",
+    "basic:願景計畫外加名額": "無",
+    "basic:指定項目甄試費": "1500",
+    "basic:寄發(或公告)指定項目甄試通知": "115.3.31",
+    "basic:繳交資料收件截止": "115.5.6",
+    "basic:指定項目甄試日期": "115.5.14",
+    "basic:榜示": "115.6.1",
+    "basic:甄選總成績複查截止": "115.5.27",
+    "basic:離島外加名額縣市別限制": "(無)",
+    "grade:國文": "前標|6|*1.00",
+    "stage2:審查資料": "75分|40%",
+    "grade:英文": "前標|4|*1.00",
+    "stage2:筆試": "--|20%",
+    "grade:數學A": "均標|--|--",
+    "grade:數學B": "均標|--|--",
+    "grade:社會": "前標|3|*1.00",
+    "overQuota": " 一、學測國文、英文、社會之級分總和\n　　　　　　　　　　　　　二、學測英文級分\n　　　　　　　　　　　　　三、學測國文級分",
+    "review": "項目：\n　修課紀錄(A)、課程學習成果(B、E)、多元表現(F、J、K、L、N)、學習歷程自述(O、P、Q)　※項目內容請參照本簡章「貳、分則」乙、審查資料項目內容對照表 (第20頁)。\n說明：\n　考生請詳閱本校歷史學系「書面資料準備指引」。",
+    "interview": "一、筆試時間：5月14日(四)14:20-16:20。\n二、筆試地點：5月13日(三)13:00併同「考生應試須知」公告於本系網站，不另通知。\n三、考生座位表：5月14日(四)13:00後，公告張貼於筆試試場外。\n四、筆試為一科考試，時間120分鐘，內容包含「史學思維申論」和「文獻閱讀摘要」。"
+  },
+  "unmapped": []
+}
