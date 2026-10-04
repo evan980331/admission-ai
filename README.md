@@ -1,4 +1,4 @@
-# Predicter｜台灣大學升學落點預測／決策系統
+# admission-ai｜台灣大學升學落點預測／決策系統
 
 > P1 基礎建設階段：建立可長期使用的 GitHub + Neon + PostgreSQL + data pipeline 基礎。
 > 現在**不是**落點查詢網站，不提供錄取機率、不宣稱準確率。

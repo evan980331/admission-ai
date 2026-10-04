@@ -37,7 +37,7 @@ describe("browser acquisition", () => {
     for (const u of [
       "https://www.google.com/search?q=x",
       "https://university-tw.ldkrsi.men/caac/001/001012",
-      "https://github.com/evan980331/predicter",
+      "https://github.com/evan980331/admission-ai",
       "https://www.cac.edu.tw/index.html",
     ]) {
       expect(isCacDetailTabUrl(u)).toBe(false);
