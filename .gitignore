@@ -1,0 +1,37 @@
+# ---> Node
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---> Env / secrets (NEVER commit real secrets)
+.env
+.env.local
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ---> Neon / DB local artefacts
+.neon/
+neon.config.json
+
+# ---> OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# ---> Logs / temp
+*.log
+npm-debug.log*
+.cache/
+
+# ---> Raw data: never commit large crawled dumps by default
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep

@@ -1,0 +1,41 @@
+{
+  "name": "predicter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "台灣大學升學落點預測／決策系統 Predicter — 資料平台基礎",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx db/migrate.ts",
+    "db:seed": "tsx db/seed.ts",
+    "validate": "tsx scripts/validate.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "dotenv": "^16.4.5",
+    "next": "14.2.5",
+    "pg": "^8.12.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.5",
+    "prettier": "^3.3.2",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.2",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
