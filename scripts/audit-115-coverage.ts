@@ -211,6 +211,26 @@ async function main() {
 
   const summary = summarize(rows);
   const identity = checkIdentity(rows);
+  // School-level universe (P1-C.2A): read-only, admission rows untouched.
+  let schoolIndex: { present: boolean; schools: number; sourceUrl: string | null; listedDepartments: number } = {
+    present: false,
+    schools: 0,
+    sourceUrl: null,
+    listedDepartments: 0,
+  };
+  const schoolIndexPath = path.join(rawDir, "..", "universe", "school-index.json");
+  const schoolIndexRaw = readJson(schoolIndexPath) as {
+    sourceUrl?: string;
+    schools?: { schoolCode?: string; listedDepartmentCount?: number | null }[];
+  } | null;
+  if (schoolIndexRaw && Array.isArray(schoolIndexRaw.schools)) {
+    schoolIndex = {
+      present: true,
+      schools: schoolIndexRaw.schools.length,
+      sourceUrl: schoolIndexRaw.sourceUrl ?? null,
+      listedDepartments: schoolIndexRaw.schools.reduce((n, s) => n + (s.listedDepartmentCount ?? 0), 0),
+    };
+  }
   const report = {
     generatedAt: new Date().toISOString(),
     academicYear,
@@ -218,6 +238,7 @@ async function main() {
     universeSourceNote: "no TotalGsdShow / school-index raw in repo; universe is verified code-identified fragments only (official raw+DB masters, fixture-labeled research copies). Counts are a floor, not the 115 total.",
     dbResearchRowsExcluded: dbSkippedResearch,
     metaMismatches,
+    schoolIndex,
     summary,
     identityIssues: identity,
     rows,
@@ -230,7 +251,8 @@ async function main() {
   console.log(`needsAcquisition=${summary.needsAcquisition} needsParseFix=${summary.needsParseFix} needsSchemaMapping=${summary.needsSchemaMapping}`);
   console.log(`gapsBySchool=${JSON.stringify(summary.gapsBySchool)}`);
   console.log(`identityIssues=${identity.length}${identity.length > 0 ? " " + JSON.stringify(identity) : ""}`);
-  console.log(`universeSourceComplete=false (no official index raw; floor only)`);
+  console.log(`schoolIndex: present=${schoolIndex.present} schools=${schoolIndex.schools} listedDepartments=${schoolIndex.listedDepartments}`);
+  console.log(`universeSourceComplete=false (admission universe needs ShowSchGsd pages; floor only)`);
   if (out) console.log(`out: ${out}`);
 }
 

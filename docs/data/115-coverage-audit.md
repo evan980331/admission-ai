@@ -56,6 +56,18 @@ P1-C.1 regression：001012／001022 皆六旗 complete ✓。
 
 ## 6. 重跑方式
 
+## 7. P1-C.2A 附錄：school universe（TotalGsdShow 實收）
+
+- raw：`data/raw/.../universe/total-gsd-show.html`（23,041 chars）＋meta
+ （academicYear 115／sourceType official-cac-universe／sourceUrl 逐字／
+  retrievedAt／browser-cdp／sha256 `a58149e2…9e4`），CDP 單頁讀取，零 CAC 請求。
+- `school-index.json`：**64 校**（colno 001–153，非連號；0 失敗、0 重複），
+  列名系数组合計 **2206**（官方頁面自列，佐證用；P3.5 PDF 的 73／58／51
+  與 001／002／003 列數吻合）。
+- admission-program universe 仍 incomplete（ShowSchGsd 0 取得）；學校數≠校系數，
+  不得混用；audit 腳本已讀 school-index（`schoolIndex.present=true`），
+  admission 判定邏輯未動。
+
 ```bash
 npx tsx scripts/audit-115-coverage.ts --out <path>.json
 ```
