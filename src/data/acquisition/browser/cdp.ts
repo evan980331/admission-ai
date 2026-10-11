@@ -24,6 +24,8 @@ export function assertLoopback(url: string): void {
 
 export type HttpGet = (url: string) => Promise<{ status: number; text: string }>;
 export type WsEvaluate = (wsUrl: string, expression: string) => Promise<string>;
+/** Raw CDP sender (for non-evaluate methods like Page.navigate). */
+export type WsSend = (wsUrl: string, message: object) => Promise<unknown>;
 
 const defaultHttpGet: HttpGet = async (url) => {
   assertLoopback(url);
@@ -31,7 +33,7 @@ const defaultHttpGet: HttpGet = async (url) => {
   return { status: res.status, text: await res.text() };
 };
 
-const defaultWsEvaluate: WsEvaluate = (wsUrl, expression) =>
+export const defaultWsEvaluate: WsEvaluate = (wsUrl, expression) =>
   new Promise<string>((resolve, reject) => {
     try {
       assertLoopback(wsUrl);
@@ -119,4 +121,83 @@ export async function captureCurrentPage(
     tabTitle: typeof snap.title === "string" ? snap.title : "",
     outerHtml: snap.html,
   };
+}
+
+const defaultWsSend: WsSend = (wsUrl, message) =>
+  new Promise<unknown>((resolve, reject) => {
+    try {
+      assertLoopback(wsUrl);
+    } catch (err) {
+      reject(err);
+      return;
+    }
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch (err) {
+      reject(err);
+      return;
+    }
+    const timer = setTimeout(() => {
+      try {
+        ws.close();
+      } catch {
+        /* noop */
+      }
+      reject(new Error("CDP send timeout"));
+    }, 15000);
+    ws.addEventListener("open", () => {
+      ws.send(JSON.stringify({ id: 1, ...message }));
+    });
+    ws.addEventListener("message", (ev) => {
+      try {
+        const msg = JSON.parse(String((ev as MessageEvent).data));
+        if (msg.id !== 1) return;
+        clearTimeout(timer);
+        ws.close();
+        if (msg.error) reject(new Error(`CDP error: ${msg.error.message ?? JSON.stringify(msg.error)}`));
+        else resolve(msg.result ?? null);
+      } catch (err) {
+        clearTimeout(timer);
+        reject(err);
+      }
+    });
+    ws.addEventListener("error", (ev) => {
+      clearTimeout(timer);
+      reject(new Error(`CDP websocket error: ${String((ev as ErrorEvent).message ?? ev)}`));
+    });
+  });
+
+/** Navigate one tab via CDP Page.navigate (runner-driven; never bulk). */
+export async function navigateTab(wsUrl: string, url: string, wsSend: WsSend = defaultWsSend): Promise<void> {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    throw new Error(`refusing to navigate to unparseable URL: ${url.slice(0, 80)}`);
+  }
+  if (u.hostname.toLowerCase() !== "www.cac.edu.tw") {
+    throw new Error(`refusing to navigate off official host: ${u.hostname}`);
+  }
+  await wsSend(wsUrl, { method: "Page.navigate", params: { url } });
+}
+
+/**
+ * Browser fingerprint for pre-run confirmation (loopback only, like
+ * listTargets). Returns null on any failure — callers fail closed.
+ */
+export async function getBrowserVersion(port: number, httpGet: HttpGet = defaultHttpGet): Promise<string | null> {
+  let res: { status: number; text: string };
+  try {
+    res = await httpGet(`http://127.0.0.1:${port}/json/version`);
+  } catch {
+    return null;
+  }
+  if (res.status !== 200) return null;
+  try {
+    const data = JSON.parse(res.text) as { Browser?: unknown };
+    return typeof data.Browser === "string" && data.Browser ? data.Browser : null;
+  } catch {
+    return null;
+  }
 }

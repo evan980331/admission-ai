@@ -333,6 +333,8 @@ export function parseDetailHtml(html: string, opts: ParseOptions): DetailParseRe
     offshoreRestriction: toNull(mapped["offshoreRestriction"] ?? "") as string | null,
     notes,
     apcs: apcsItems.length > 0 || apcsNote ? { items: apcsItems, note: apcsNote } : null,
+    // Mobile template has no tech-block parsing; null = not assessed here, never fabricated.
+    techScreening: null,
     source: "official",
     sourceUrl: opts.sourceUrl,
     retrievedAt: opts.retrievedAt ?? null,

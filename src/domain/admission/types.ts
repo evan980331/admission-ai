@@ -69,6 +69,34 @@ export interface ApcsRequirement {
   sourceText: string;
 }
 
+export type TechWeightStatus = "shared" | "attributed_to_stage2" | "unstated";
+
+export interface TechScreeningItem {
+  position: number;
+  name: string;
+  /** 檢定 (e.g. 前標). null = missing ("--"), never 0. */
+  requirement: string | null;
+  /** 篩選倍率. null = missing or uninterpretable (e.g. ◎), never 0. */
+  multiplier: number | null;
+  /** 術科成績採計 (e.g. *1.00). Kept as text; semantics unverified. */
+  scoreMethod: string | null;
+  /** Raw "requirement|multiplier|scoreMethod" triple as parsed. */
+  sourceText: string;
+}
+
+export interface TechScreeningGroup {
+  /**
+   * Raw aggregate 佔比 (e.g. "40%") when it cannot be attributed to a single
+   * item. NULL when 1:1-attributed to a second_stage item (the value lives
+   * there — single home rule) or when unstated. Never split by guess.
+   */
+  weight: string | null;
+  weightStatus: TechWeightStatus;
+  items: TechScreeningItem[];
+  /** Raw weight cell + member names + attribution record. */
+  sourceText: string;
+}
+
 export type SpecialKind =
   | "gender_restriction"
   | "offshore_restriction"
@@ -156,6 +184,8 @@ export interface CanonicalAdmissionDetail {
   /** APCS rows; null when the page has no APCS section (not fabricated). */
   apcs: ApcsRequirement[] | null;
   apcsNote: string | null;
+  /** Arts-variant tech block; null when absent or content-free (not fabricated). */
+  techScreening: TechScreeningGroup | null;
   specialRequirements: SpecialRequirement[];
   secondStage: SecondStage;
   reviewRequirements: ReviewRequirement[];

@@ -63,6 +63,23 @@ export interface DbApcsRequirement {
   sourceText: string;
 }
 
+export interface DbTechScreeningItem {
+  position: number;
+  name: string;
+  requirement: string | null;
+  multiplier: number | null;
+  scoreMethod: string | null;
+  sourceText: string;
+}
+
+export interface DbTechScreeningGroup {
+  /** Raw aggregate 佔比; NULL when 1:1-attributed to second_stage or unstated. Never split. */
+  weight: string | null;
+  weightStatus: "shared" | "attributed_to_stage2" | "unstated";
+  items: DbTechScreeningItem[];
+  sourceText: string;
+}
+
 export interface DbReviewRequirement {
   position: number;
   categoryCode: string | null;
@@ -115,6 +132,8 @@ export interface DbAdmissionRecords {
   special: DbSpecialRequirement[];
   schedule: DbSchedule;
   notices: DbNotice[];
+  /** Arts-variant tech block; null when absent or content-free. */
+  techGroup: DbTechScreeningGroup | null;
   provenance: CanonicalAdmissionDetail["provenance"];
 }
 
@@ -202,6 +221,21 @@ export function toDbRecords(canonical: CanonicalAdmissionDetail): DbAdmissionRec
       recheckDeadlineSource: canonical.schedule.recheckDeadline.sourceText,
     },
     notices: canonical.notices.map((n) => ({ position: n.position, type: n.type, text: n.text, sourceText: n.sourceText })),
+    techGroup: canonical.techScreening
+      ? {
+          weight: canonical.techScreening.weight,
+          weightStatus: canonical.techScreening.weightStatus,
+          items: canonical.techScreening.items.map((t) => ({
+            position: t.position,
+            name: t.name,
+            requirement: t.requirement,
+            multiplier: t.multiplier,
+            scoreMethod: t.scoreMethod,
+            sourceText: t.sourceText,
+          })),
+          sourceText: canonical.techScreening.sourceText,
+        }
+      : null,
     provenance: canonical.provenance,
   };
 }

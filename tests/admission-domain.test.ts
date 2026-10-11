@@ -13,6 +13,8 @@ import {
   buildChildDelete,
   buildChildInserts,
   buildHeaderUpsert,
+  buildTechGroupInsert,
+  buildTechItemInserts,
   ensureSourceStatements,
   isLoadableDetail,
   lookupStatements,
@@ -167,6 +169,24 @@ describe("toDbRecords", () => {
     expect(db.notices).toHaveLength(4);
     expect(db.provenance.sourceUrl).toContain("115_001012.htm");
   });
+  it("non-tech pages carry no tech group", () => {
+    expect(db.techGroup).toBeNull();
+  });
+  it("008432 tech group: shared 40% once; items without weight", () => {
+    const tdb = toDbRecords(canon("115_008432.htm", "008432"));
+    expect(tdb.techGroup).toMatchObject({ weight: "40%", weightStatus: "shared" });
+    expect(tdb.techGroup!.items.map((i) => i.name)).toEqual(["彩繪技法", "創意表現"]);
+    expect(tdb.techGroup!.items[0]).toMatchObject({ position: 1, requirement: null, multiplier: 5, scoreMethod: "*1.00" });
+    for (const item of tdb.techGroup!.items) expect("weight" in item).toBe(false);
+    expect(tdb.secondStage.map((s) => s.name)).toEqual(["審查資料", "面試"]);
+  });
+  it("009432 tech group attributed: weight single-homed in second_stage", () => {
+    const tdb = toDbRecords(canon("115_009432.htm", "009432"));
+    expect(tdb.techGroup).toMatchObject({ weight: null, weightStatus: "attributed_to_stage2" });
+    expect(tdb.techGroup!.items).toHaveLength(1);
+    expect(tdb.techGroup!.items[0]).toMatchObject({ name: "主修", requirement: null, multiplier: null, scoreMethod: "*1.00" });
+    expect(tdb.secondStage.find((s) => s.name === "主修")).toMatchObject({ weight: "90%" });
+  });
 });
 
 describe("loader statement builders (pure, no DB)", () => {
@@ -194,14 +214,38 @@ describe("loader statement builders (pure, no DB)", () => {
     expect(s.values[20]).toBe("20%");
     expect(s.values[21]).toBeNull();
   });
-  it("children delete covers all 8 tables; inserts match record counts", () => {
+  it("children delete covers 8 tables + tech pair; tech items before groups", () => {
     const dels = buildChildDelete("a1");
-    expect(dels).toHaveLength(8);
+    expect(dels).toHaveLength(10);
     expect(dels.map((d) => d.text)).toContain("DELETE FROM admission_schedule WHERE admission_id = $1");
+    const texts = dels.map((d) => d.text);
+    const itemIdx = texts.findIndex((t) => t.startsWith("DELETE FROM tech_screening_items"));
+    const groupIdx = texts.findIndex((t) => t.startsWith("DELETE FROM tech_screening_groups"));
+    expect(itemIdx).toBeGreaterThan(-1);
+    expect(groupIdx).toBeGreaterThan(itemIdx);
+    expect(texts[itemIdx]).toContain("g.admission_id = $1");
     const ins = buildChildInserts("a1", db);
     const expected = db.subjects.length + db.sequences.length + db.secondStage.length + db.apcs.length + db.review.length + db.special.length + 1 + db.notices.length;
     expect(ins).toHaveLength(expected);
     expect(ins.every((s) => s.values[0] === "a1")).toBe(true);
+  });
+  it("tech builders: group RETURNING id; items carry group FK; deterministic", () => {
+    const group = { weight: "40%", weightStatus: "shared" as const, items: [] as never[], sourceText: "weight=40% status=shared items=a/b" };
+    const gs = buildTechGroupInsert("a1", group);
+    expect(gs.text).toContain("INSERT INTO tech_screening_groups");
+    expect(gs.text).toContain("RETURNING id");
+    expect(gs.values).toEqual(["a1", "40%", "shared", "weight=40% status=shared items=a/b"]);
+    const items = [
+      { position: 1, name: "a", requirement: null, multiplier: 5, scoreMethod: "*1.00", sourceText: "a|--|5|*1.00" },
+      { position: 2, name: "b", requirement: null, multiplier: null, scoreMethod: null, sourceText: "b|--|◎|" },
+    ];
+    const stmts = buildTechItemInserts("g1", "a1", items);
+    expect(stmts).toHaveLength(2);
+    expect(stmts[0]!.values).toEqual(["g1", "a1", 1, "a", null, 5, "*1.00", "a|--|5|*1.00"]);
+    expect(stmts[0]!.text).toContain("INSERT INTO tech_screening_items");
+    // ◎ stays NULL numerically with raw preserved; never 0.
+    expect(stmts[1]!.values?.[5]).toBeNull();
+    expect(JSON.stringify(buildTechItemInserts("g1", "a1", items))).toBe(JSON.stringify(buildTechItemInserts("g1", "a1", items.map((x) => ({ ...x })))));
   });
   it("plan is deterministic (idempotent)", () => {
     const again = toDbRecords(canon("115_001022.htm", "001022"));
@@ -253,5 +297,23 @@ describe("003 migration (static, offline)", () => {
     }
     expect(sql004).not.toMatch(/DROP\s+(TABLE|COLUMN)/i);
     expect(sql004).toContain("department_admissions");
+  });
+  it("006 creates tech group/item tables, re-runnable, no item weight column", () => {
+    const sql006 = fs.readFileSync(path.join(dir, "006_tech_screening.sql"), "utf8");
+    expect(sql006).toContain("CREATE TABLE IF NOT EXISTS tech_screening_groups (");
+    expect(sql006).toContain("CREATE TABLE IF NOT EXISTS tech_screening_items (");
+    expect(sql006).toContain("REFERENCES department_admissions (id) ON DELETE CASCADE");
+    expect(sql006).toContain("REFERENCES tech_screening_groups (id) ON DELETE CASCADE");
+    expect(sql006).toContain("admission_id    UUID NOT NULL UNIQUE REFERENCES department_admissions");
+    expect(sql006).toContain("UNIQUE (group_id, position)");
+    expect(sql006).toContain("weight_status");
+    for (const status of ["shared", "attributed_to_stage2", "unstated"]) expect(sql006).toContain(`'${status}'`);
+    // Items carry screening cells only; weights live on groups or attributed stage2 rows.
+    const itemBlock = sql006.slice(sql006.indexOf("CREATE TABLE IF NOT EXISTS tech_screening_items ("));
+    expect(itemBlock.slice(0, 1500)).not.toMatch(/weight/i);
+    expect(sql006).not.toMatch(/DROP\s+(TABLE|COLUMN)/i);
+    for (const t of ["screening_subject_rules", "second_stage_items", "apcs_requirements"]) {
+      expect(sql006).not.toContain(`ALTER TABLE ${t}`);
+    }
   });
 });

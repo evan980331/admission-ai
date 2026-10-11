@@ -123,3 +123,121 @@ export async function captureUniverseIndex(port: number): Promise<{ sourceUrl: s
   }
   return { sourceUrl, outerHtml: page.outerHtml, title: page.tabTitle };
 }
+
+/**
+ * Dedicated school-tab gate (P1-C.2A-2 scan mode). Returns the 3-digit
+ * school code for ShowSchGsd pages, null otherwise. Thin wrapper over the
+ * index gate — detail pages can never match (different shape by construction).
+ */
+export function isCacSchoolTabUrl(url: string): string | null {
+  const gate = isCacApplicationIndexUrl(url);
+  if (!gate || gate.kind !== "school" || !gate.schoolCode) return null;
+  return gate.schoolCode;
+}
+
+/** CAC traffic-limit page marker. Such pages must never be stored as raw. */
+export function isTrafficLimitedHtml(html: string): boolean {
+  return html.includes("流量過高");
+}
+
+export interface SchoolPageMeta {
+  academicYear: 115;
+  sourceKind: "official-cac-school";
+  sourceUrl: string;
+  retrievedAt: string;
+  retrievalMethod: "browser-cdp";
+  sha256: string;
+  schoolCode: string;
+}
+
+export interface StoreSchoolOutcome {
+  htmlPath: string;
+  metaPath: string;
+  meta: SchoolPageMeta;
+  bytes: number;
+  status: "captured" | "already_captured";
+}
+
+/**
+ * Store one school page under school/115_<code>.html + meta.
+ * Existing files are never overwritten: identical sha -> already_captured;
+ * different sha -> hash-mismatch error (changed source, human decides).
+ */
+export function storeSchoolPage(opts: {
+  schoolDir: string;
+  schoolCode: string;
+  sourceUrl: string;
+  outerHtml: string;
+  retrievedAt?: string;
+}): StoreSchoolOutcome {
+  const retrievedAt = opts.retrievedAt ?? new Date().toISOString();
+  if (!/^\d{3}$/.test(opts.schoolCode)) {
+    throw new Error(`refusing to store school page with non-3-digit code: ${opts.schoolCode}`);
+  }
+  fs.mkdirSync(opts.schoolDir, { recursive: true });
+  const htmlPath = path.join(opts.schoolDir, `115_${opts.schoolCode}.html`);
+  const metaPath = `${htmlPath}.meta.json`;
+  const sha = sha256Hex(opts.outerHtml);
+  if (fs.existsSync(htmlPath)) {
+    const existingSha = sha256Hex(fs.readFileSync(htmlPath, "utf8"));
+    if (existingSha === sha) {
+      const meta: SchoolPageMeta = {
+        academicYear: 115,
+        sourceKind: "official-cac-school",
+        sourceUrl: opts.sourceUrl,
+        retrievedAt,
+        retrievalMethod: "browser-cdp",
+        sha256: sha,
+        schoolCode: opts.schoolCode,
+      };
+      return { htmlPath, metaPath, meta, bytes: Buffer.byteLength(opts.outerHtml, "utf8"), status: "already_captured" };
+    }
+    throw new Error(`hash mismatch on ${htmlPath} (stored ${existingSha.slice(0, 12)}… vs live ${sha.slice(0, 12)}…): refusing to overwrite changed source`);
+  }
+  fs.writeFileSync(htmlPath, opts.outerHtml);
+  const meta: SchoolPageMeta = {
+    academicYear: 115,
+    sourceKind: "official-cac-school",
+    sourceUrl: opts.sourceUrl,
+    retrievedAt,
+    retrievalMethod: "browser-cdp",
+    sha256: sha,
+    schoolCode: opts.schoolCode,
+  };
+  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+  return { htmlPath, metaPath, meta, bytes: Buffer.byteLength(opts.outerHtml, "utf8"), status: "captured" };
+}
+
+/**
+ * Pure department-tab matcher (scan mode). Returns pages whose URL is a CAC
+ * detail page for exactly the expected department code (query-insensitive).
+ * Never navigates, never guesses — pure filter over already-open tabs.
+ */
+export function matchDepartmentTab<T extends { url: string }>(
+  pages: T[],
+  academicYear: number,
+  departmentCode: string,
+): T[] {
+  if (!/^\d{6}$/.test(departmentCode)) return [];
+  const expected = `${academicYear}_${departmentCode}.htm`.toLowerCase();
+  return pages.filter((p) => {
+    let u: URL;
+    try {
+      u = new URL(p.url);
+    } catch {
+      return false;
+    }
+    if (u.hostname.toLowerCase() !== "www.cac.edu.tw") return false;
+    return u.pathname.toLowerCase().endsWith(`/${expected}`);
+  });
+}
+
+/** Error-page markers: captured HTML with these is never stored or loaded. */
+export function isErrorPageHtml(html: string): boolean {
+  return (
+    html.includes("流量過高") ||
+    html.includes("找不到資料") ||
+    html.includes("查無資料") ||
+    html.includes("系統錯誤")
+  );
+}

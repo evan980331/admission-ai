@@ -42,6 +42,7 @@ const DETAIL_FIELDS = [
   "offshoreRestriction",
   "notes",
   "apcs",
+  "techScreening",
   "source",
   "sourceUrl",
   "retrievedAt",
@@ -139,6 +140,21 @@ export function auditCanonicalCompleteness(
       }
     });
     if (canonical.apcsNote !== record.apcs.note) error("special", "apcs note lost");
+  }
+
+  // Tech screening: presence, weight/status passthrough, item fidelity.
+  if ((record.techScreening === null) !== (canonical.techScreening === null)) error("tech", "techScreening presence flipped");
+  if (record.techScreening && canonical.techScreening) {
+    const t = canonical.techScreening;
+    if (t.weight !== record.techScreening.weight) error("tech", "tech group weight lost");
+    if (t.weightStatus !== record.techScreening.weightStatus) error("tech", "tech weightStatus lost");
+    if (t.items.length !== record.techScreening.items.length) error("tech", "tech item count changed");
+    record.techScreening.items.forEach((a, i) => {
+      const c = t.items[i];
+      if (!c || c.name !== a.name || c.requirement !== a.requirement || c.multiplier !== a.multiplier || c.scoreMethod !== a.scoreMethod) {
+        error("tech", `tech item ${i} altered`);
+      }
+    });
   }
 
   // Schedule + fee: ISO dates must equal ROC conversion, never invented.

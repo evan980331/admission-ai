@@ -1,39 +1,76 @@
-# admission-ai｜台灣大學升學落點預測／決策系統
+# Admission AI｜升學輔助平台
 
-> P1 基礎建設階段：建立可長期使用的 GitHub + Neon + PostgreSQL + data pipeline 基礎。
-> 現在**不是**落點查詢網站，不提供錄取機率、不宣稱準確率。
+> **產品定位**：Admission AI 是升學輔助平台，落點分析只是其中一個功能模組，
+> 不是整個專案。平台目前處於**資料基礎建設階段**：不提供錄取機率、不宣稱
+> 任何模型準確率、不提供選填建議。
 
-## 目的
+## 產品願景
 
-長期核心鏈路：
+以官方招生資料為基礎，長期提供四類彼此獨立的功能（皆須各自驗證，不可混為一談）：
 
-官方招生資料 → 歷史資料 → 統計模型 → 當年度考生行為 → 個人錄取機率 → 志願組合最佳化
+| 功能 | 說明 | 狀態 |
+|---|---|---|
+| 客觀錄取機率 | 以歷史分數與招生名額為基礎的統計估計，須經回測驗證 | 規劃中 |
+| 適合程度 | 科系與考生興趣／能力的匹配參考，非機率 | 規劃中 |
+| 學習歷程證據 | 審查資料項目整理，協助考生盤點佐證材料，不評分 | 規劃中 |
+| 申請文章分析 | 備審文件結構檢查輔助，不代寫、不保證效果 | 規劃中 |
+| 落點分析 | 個人分數與歷史分布的比對參考（平台模組之一） | 規劃中 |
 
-第一階段只做可靠資料層與資料庫，不做推薦模型、AI 聊天、embedding。
+**名詞紅線**：文件中「落點」「機率」「適合」「推薦」不可混用；
+任何未經回測的數字一律不得稱為準確率。
+
+## 功能模組與實作狀態（以程式碼為準）
+
+| 模組 | 位置 | 狀態 |
+|---|---|---|
+| 資料庫 schema／migration／seed | `db/` | 已實作 |
+| 官方簡章 CSV 解析與 import pipeline | `src/data/importers/official/application115/` | 已實作 |
+| 招生 detail HTML 解析（layout-A／B） | `src/data/importers/official/application115/detail/` | 已實作（術科 `table.tech` 變體二階提取已知缺口，見下） |
+| Acquisition（單分頁 CDP、PENDING／LOAD_REQUIRED） | `src/data/acquisition/`、`scripts/admission-acquire.ts` | 已實作 |
+| 學校／系組 inventory（10 校、496 筆、010 不存在） | `src/data/discovery/official/application115/pdf-inventory.ts` | 已實作 |
+| Normalization（DB 來源、dry-run、reconcile） | `src/data/normalization/admission115.ts`、`scripts/normalize-admission-115.ts` | 已實作 |
+| Import run 追蹤 | `data_import_runs`（`src/data/importers/.../index.ts`、`scripts/normalize-admission-115.ts --import`） | 已實作 |
+| 資料驗證（8 項） | `scripts/validate.ts` | 已實作 |
+| Prediction 介面 | `src/server/prediction/`（僅 types，一律回 null + 警告） | 介面佔位，未實作模型 |
+| 學生／志願 domain types | `src/domain/student/` | types only |
+| 落點 UI、AI 聊天、embedding、機率模型 | — | 規劃中（不存在） |
+
+## 目前實際進度
+
+- P1：schema／migration／seed／validation／prediction 介面 — 完成。
+- P2：官方 CSV import pipeline（含 `data_import_runs` bookkeeping）— 完成。
+- P3：115 學年度 10 校共 **496/496 LOADED**（001=73、002=58、003=51、004=65、005=25、006=47、007=32、008=43、009=45、011=57；010 官方不存在），pending=0、failed=0。
+- P3.5：inventory 擴充（004~009、011）+ regression tests — 完成。
+- P4（001~003，182 筆）：normalization + reconcile import + gate — PASS。
+- P4.1（全庫 496）：dry-run 發現 **2 筆缺口**，gate FAIL（見下），未 import。
+
+### 已知缺口（P4.1 dry-run 發現，未修）
+
+`008432`、`009432`（術科系，`table.tech` 版面）：一階學測格全為 `--`
+（純術科篩選，來源真值），但二階（審查／術科百分比）存在於來源卻未被
+layout-B parser 提取。規則維持嚴格（未放寬），待 parser 支援後再以
+LOAD_REQUIRED 通道針對該 2 筆重載。本階段禁止為通過而改規則或手寫資料。
 
 ## 技術架構
 
 - Next.js 14 + TypeScript + ESLint + Prettier
-- PostgreSQL on Neon (`@neondatabase/serverless` for app, `pg` for migrations/seeds)
-- Raw SQL migrations in `db/migrations/`（可重複部署，`schema_migrations` 追蹤）
-- Seed: `db/seed.ts`（僅 research_only 測試資料）
-- Validation: `scripts/validate.ts`（8 項檢查）
-- Prediction: `src/server/prediction/`（現階段只有 types／介面，一律回傳 null + 警告）
+- PostgreSQL on Neon（app 用 `@neondatabase/serverless`，migration／scripts 用 `pg`）
+- Raw SQL migrations（可重複部署，`schema_migrations` 追蹤；`005` 僅冪等 DML）
+- Scripts：`admission:acquire`、`admission:queue`、`p4:normalize`（預設 dry-run）、`validate`
+- 測試：vitest（366 項）；`npm run typecheck`、`eslint` 全綠為合併前門檻
 
-## 資料來源策略
+## 資料可信度原則
 
-- PRIMARY（官方優先）：大考中心 `https://www.ceec.edu.tw/`、大學甄選入學委員會 `https://www.cac.edu.tw/`、大學考試入學分發委員會 `https://www.uac.edu.tw/`
-- SECONDARY：各大學官方招生資料
-- RESEARCH ONLY：`https://www.com.tw/` — 僅競品研究、資料結構研究、交叉驗證；未確認授權前不複製進商業資料庫
-
-詳見 `docs/data-sources/source-policy.md`。
+- **官方資料優先**：甄選會 CAC、大考中心 CEEC、分發會 UAC、各大學官方；`com.tw` 僅競品／結構／交叉驗證，未授權不進商業 DB（見 `docs/data-sources/source-policy.md`）。
+- **來源追蹤**：重要資料保留 `source / source_url / academic_year / retrieved_at / parser_version / data_version`（`data_sources` 部分歷史列 `retrieved_at` 仍為 NULL，屬已知待補項，不影響現行流程）。
+- **缺漏值語意**：null = 缺漏，永不補 0；選填資料（如 APCS）缺漏記 warning，不當 error。
+- **驗證優先**：acquisition 按狀態機重試、normalization 附 raw 重 parse 比對、import 採 skip-if-identical reconcile；驗證失敗即停，不繞過、不硬塞。
 
 ## MVP 資料範圍
 
-- 制度：大學個人申請（`program_type=application`）
-- 考試：學測（`exam_type=gsat`），欄位不寫死，未來可加分科／統測
-- 歷史：111–115（年度為資料，不寫死在程式邏輯）
-- schema 支援全台所有校系；seed 只放 2–3 所測試大學
+- 制度：大學個人申請（`program_type=application`）；考試：學測（欄位不寫死）。
+- 年度為資料不寫死；school／department／program 分離；同校系不同年度為不同 record。
+- Seed 僅放 `research_only` 測試資料（`TEST-*`），絕不混充官方資料。
 
 ## 快速開始
 
@@ -46,34 +83,10 @@ npm run validate
 npm run dev
 ```
 
-Neon（需本機 `neon login` 瀏覽器授權後）：
+唯讀檢查：`npm run admission:queue`、`npm run p4:normalize`（預設 dry-run，不寫 DB）。
 
-```bash
-npm i -g neon@latest
-neon link --project-id blue-union-44034956 --branch production -y
-neon config init
-neon deploy
-```
+## 開發限制（現階段不做）
 
-Secrets 只允許出現在 `.env.local`／本機環境／Neon secret 管理。
-
-## P1 / P2 階段
-
-- P0 市場研究：`docs/research/P0-market.md`
-- P1/P1.5 資料源規劃：`docs/research/P1-data-sources.md`
-- P1 本階段：schema + migration + seed + validation + prediction 介面
-- P2（下一步）：官方簡章 parser、import pipeline、data_import_runs 監控、統計模型 v0
-
-## 本機資料管線（P3.11，全離線）
-
-人工下載 CAC 官方 HTML → `data/raw/official/115/application/` →
-`npm run data:import-official-local -- --dry-run` →
-詳見 `docs/data-sources/official-115-local-import.md`。零網路、不寫 DB。
-
-或用自己開好的 Chrome 分頁：`npm run data:import-official-browser`
-（只讀 localhost CDP，不爬 CAC）→
-詳見 `docs/data-sources/official-115-browser-acquisition.md`。
-
-## 限制（本階段不做）
-
-落點 UI、AI chatbot、OpenAI API、embedding、爬 com.tw、大量爬蟲、錄取機率宣稱。
+落點 UI、錄取機率計算與宣稱、模型準確率宣稱、AI chatbot、OpenAI API、
+embedding、爬 com.tw、大量爬蟲、任何 P4.1 gate FAIL 下的正式 import、
+以及為通過驗證而放寬規則或手寫資料。

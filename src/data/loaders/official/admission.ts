@@ -1,5 +1,5 @@
 import { identityKey } from "../../dataset/official/application115/dataset";
-import type { DbAdmissionRecords } from "../../../domain/admission/toDbRecords";
+import type { DbAdmissionRecords, DbTechScreeningGroup, DbTechScreeningItem } from "../../../domain/admission/toDbRecords";
 
 export interface SqlStatement {
   text: string;
@@ -41,11 +41,26 @@ export function lookupStatements(records: DbAdmissionRecords): SqlStatement[] {
   ];
 }
 
-export function ensureSourceStatements(sourceName: string, dataVersion: string): SqlStatement[] {
+export function ensureSourceStatements(sourceName: string, dataVersion: string, parserVersion?: string): SqlStatement[] {
+  // parserVersion is recorded ONLY on newly inserted source rows; existing
+  // rows keep their value (NULL for historical loads) via DO NOTHING.
+  // Omitted (undefined) preserves the exact legacy statements.
+  if (parserVersion === undefined) {
+    return [
+      {
+        text: `INSERT INTO data_sources (source_name, source_type, data_version) VALUES ($1, 'official', $2) ON CONFLICT (source_name, data_version) DO NOTHING`,
+        values: [sourceName, dataVersion],
+      },
+      {
+        text: `SELECT id FROM data_sources WHERE source_name = $1 AND data_version = $2`,
+        values: [sourceName, dataVersion],
+      },
+    ];
+  }
   return [
     {
-      text: `INSERT INTO data_sources (source_name, source_type, data_version) VALUES ($1, 'official', $2) ON CONFLICT (source_name, data_version) DO NOTHING`,
-      values: [sourceName, dataVersion],
+      text: `INSERT INTO data_sources (source_name, source_type, data_version, parser_version) VALUES ($1, 'official', $2, $3) ON CONFLICT (source_name, data_version) DO NOTHING`,
+      values: [sourceName, dataVersion, parserVersion],
     },
     {
       text: `SELECT id FROM data_sources WHERE source_name = $1 AND data_version = $2`,
@@ -97,9 +112,39 @@ const CHILD_TABLES = [
 ] as const;
 
 export function buildChildDelete(admissionId: string): SqlStatement[] {
-  return CHILD_TABLES.map((t) => ({
-    text: `DELETE FROM ${t} WHERE admission_id = $1`,
-    values: [admissionId],
+  return [
+    ...CHILD_TABLES.map((t) => ({
+      text: `DELETE FROM ${t} WHERE admission_id = $1`,
+      values: [admissionId],
+    })),
+    // Tech tables last, items before groups (FK items -> groups).
+    {
+      text: `DELETE FROM tech_screening_items i USING tech_screening_groups g WHERE i.group_id = g.id AND g.admission_id = $1`,
+      values: [admissionId],
+    },
+    {
+      text: `DELETE FROM tech_screening_groups WHERE admission_id = $1`,
+      values: [admissionId],
+    },
+  ];
+}
+
+/**
+ * Tech group insert. Returns the group id (items need it as FK), so unlike
+ * the generic child builders this statement carries RETURNING id and is
+ * executed by name in executeDbLoad rather than the flat statement loop.
+ */
+export function buildTechGroupInsert(admissionId: string, group: DbTechScreeningGroup): SqlStatement {
+  return {
+    text: `INSERT INTO tech_screening_groups (admission_id, weight, weight_status, source_text) VALUES ($1,$2,$3,$4) RETURNING id`,
+    values: [admissionId, group.weight, group.weightStatus, group.sourceText],
+  };
+}
+
+export function buildTechItemInserts(groupId: string, admissionId: string, items: DbTechScreeningItem[]): SqlStatement[] {
+  return items.map((t) => ({
+    text: `INSERT INTO tech_screening_items (group_id, admission_id, position, name, requirement, multiplier, score_method, source_text) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    values: [groupId, admissionId, t.position, t.name, t.requirement, t.multiplier, t.scoreMethod, t.sourceText],
   }));
 }
 
@@ -174,4 +219,62 @@ export function isLoadableDetail(detail: unknown): detail is {
     typeof d["departmentCode"] === "string" &&
     (d["departmentCode"] as string) !== ""
   );
+}
+
+export interface DbClient {
+  query(text: string, values?: unknown[]): Promise<{ rows: { id?: unknown }[] }>;
+}
+
+/**
+ * Shared transactional executor (single implementation for the batch loader,
+ * the scan script, and the acquisition runner): ensure source -> ensure
+ * department master (ON CONFLICT DO NOTHING) -> resolve FKs -> header UPSERT
+ * -> children delete+reinsert. Caller owns BEGIN/COMMIT/ROLLBACK.
+ * Returns the admission id. Throws fail-closed on any missing master.
+ */
+export async function executeDbLoad(
+  client: DbClient,
+  records: DbAdmissionRecords,
+  opts: { sourceName: string; dataVersion: string; departmentName: string | null; ensureDepartmentMaster?: boolean; parserVersion?: string },
+): Promise<string> {
+  for (const s of ensureSourceStatements(opts.sourceName, opts.dataVersion, opts.parserVersion)) {
+    await client.query(s.text, s.values);
+  }
+  const src = await client.query(`SELECT id FROM data_sources WHERE source_name = $1 AND data_version = $2`, [
+    opts.sourceName,
+    opts.dataVersion,
+  ]);
+  const sourceId = src.rows[0]?.id as string | undefined;
+  if (!sourceId) throw new Error("source row missing after ensure");
+  if (opts.ensureDepartmentMaster === true) {
+    await client.query(
+      `INSERT INTO departments (school_id, department_code, name) SELECT s.id, $2, $3 FROM schools s WHERE s.school_code = $1 ON CONFLICT (school_id, department_code) DO NOTHING`,
+      [records.header.schoolCode, records.header.departmentCode, opts.departmentName ?? records.header.departmentCode],
+    );
+  }
+  let departmentId: string | undefined;
+  let programId: string | undefined;
+  for (const s of lookupStatements(records)) {
+    const r = await client.query(s.text, s.values);
+    if (s.text.startsWith("SELECT d.id")) departmentId = r.rows[0]?.id as string | undefined;
+    else programId = r.rows[0]?.id as string | undefined;
+  }
+  if (!departmentId) {
+    throw new Error(`no departments row for ${records.header.schoolCode}/${records.header.departmentCode}`);
+  }
+  if (!programId) throw new Error(`no admission_programs row for year ${records.header.academicYear}`);
+  const header = buildHeaderUpsert(records, { departmentId, programId, sourceId });
+  const inserted = await client.query(header.text, header.values);
+  const admissionId = inserted.rows[0]?.id as string | undefined;
+  if (!admissionId) throw new Error("header upsert returned no id");
+  for (const s of buildChildDelete(admissionId)) await client.query(s.text, s.values);
+  for (const s of buildChildInserts(admissionId, records)) await client.query(s.text, s.values);
+  if (records.techGroup) {
+    const gs = buildTechGroupInsert(admissionId, records.techGroup);
+    const g = await client.query(gs.text, gs.values);
+    const groupId = g.rows[0]?.id as string | undefined;
+    if (!groupId) throw new Error("tech group insert returned no id");
+    for (const s of buildTechItemInserts(groupId, admissionId, records.techGroup.items)) await client.query(s.text, s.values);
+  }
+  return admissionId;
 }

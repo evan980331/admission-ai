@@ -1,0 +1,28 @@
+# H-C isolated PostgreSQL (P4.4b-7, REVIEWABLE ONLY — DO NOT START)
+#
+# Pinned engine for H-C transaction/constraint/advisory-lock verification.
+# Localhost-only port mapping: the database is never reachable off-host.
+# Credentials come from the operator environment at `docker compose up`
+# time (HC_POSTGRES_PASSWORD, required); nothing secret is stored here.
+# No container has been started in this phase; starting one needs approval.
+services:
+  postgres-hc:
+    image: postgres:16-alpine
+    container_name: admission-hc-pg
+    restart: "no"
+    ports:
+      - "127.0.0.1:55433:5432"
+    environment:
+      POSTGRES_DB: admission_hc
+      POSTGRES_USER: hc
+      POSTGRES_PASSWORD: ${HC_POSTGRES_PASSWORD:?HC_POSTGRES_PASSWORD is required}
+    volumes:
+      - pgdata-hc:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hc -d admission_hc"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  pgdata-hc:

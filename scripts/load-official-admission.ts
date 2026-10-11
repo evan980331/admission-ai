@@ -5,12 +5,8 @@ import { fromDetailRecord } from "../src/domain/admission/fromDetail";
 import { toDbRecords } from "../src/domain/admission/toDbRecords";
 import {
   DETAIL_SOURCE_NAME,
-  buildChildDelete,
-  buildChildInserts,
-  buildHeaderUpsert,
-  ensureSourceStatements,
+  executeDbLoad,
   isLoadableDetail,
-  lookupStatements,
   recordKey,
 } from "../src/data/loaders/official/admission";
 import type { DetailRecord } from "../src/data/importers/official/application115/detail/types";
@@ -81,29 +77,13 @@ async function main() {
         continue;
       }
       // ensure source
-      for (const s of ensureSourceStatements(DETAIL_SOURCE_NAME, dataVersion)) {
-        await client!.query(s.text, s.values as unknown[]);
-      }
-      const src = await client!.query(`SELECT id FROM data_sources WHERE source_name = $1 AND data_version = $2`, [DETAIL_SOURCE_NAME, dataVersion]);
-      const sourceId = src.rows[0]?.id as string | undefined;
-      if (!sourceId) throw new Error(`${key}: source row missing after ensure`);
-      // resolve FKs (fail-closed: missing master rows abort the whole run)
-      let departmentId: string | undefined;
-      let programId: string | undefined;
-      for (const s of lookupStatements(records)) {
-        const r = await client!.query(s.text, s.values as unknown[]);
-        if (s.text.startsWith("SELECT d.id")) departmentId = r.rows[0]?.id as string | undefined;
-        else programId = r.rows[0]?.id as string | undefined;
-      }
-      if (!departmentId) throw new Error(`${key}: no departments row for ${records.header.schoolCode}/${records.header.departmentCode}; load masters first`);
-      if (!programId) throw new Error(`${key}: no admission_programs row for year ${records.header.academicYear}; load masters first`);
-      const header = await client!.query(buildHeaderUpsert(records, { departmentId, programId, sourceId }).text, buildHeaderUpsert(records, { departmentId, programId, sourceId }).values as unknown[]);
-      const admissionId = header.rows[0]?.id as string | undefined;
-      if (!admissionId) throw new Error(`${key}: header upsert returned no id`);
-      for (const s of buildChildDelete(admissionId)) await client!.query(s.text, s.values as unknown[]);
-      for (const s of buildChildInserts(admissionId, records)) await client!.query(s.text, s.values as unknown[]);
+      const admissionId = await executeDbLoad(client!, records, {
+        sourceName: DETAIL_SOURCE_NAME,
+        dataVersion,
+        departmentName: canonical.identity.departmentName,
+      });
       loaded++;
-      console.log(`loaded ${key}`);
+      console.log(`loaded ${key} admissionId=${admissionId}`);
     }
     if (client) {
       await client.query("COMMIT");

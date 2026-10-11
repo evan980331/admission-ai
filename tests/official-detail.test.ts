@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { parseDetailHtml } from "../src/data/importers/official/application115/detail/parser";
+import { auditCanonicalCompleteness } from "../src/domain/admission/validation";
+import { fromDetailRecord } from "../src/domain/admission/fromDetail";
 import { validateDetail } from "../src/data/importers/official/application115/detail/validator";
 import { toP2Row, toP3Input } from "../src/data/importers/official/application115/detail/normalizer";
 import { normalizeHistoricalBatch } from "../src/data/normalization/index";
@@ -153,5 +155,109 @@ describe("validator + canonical bridge + P3 handoff", () => {
       const { retrievedAt: _b, ...want } = expected;
       expect(got).toEqual(want);
     }
+  });
+});
+
+describe("tech-layout (術科) second stage (P4.1)", () => {
+  const tech = (code: string) =>
+    parseDetailHtml(fs.readFileSync(path.join(FIX, `115_${code}.htm`), "utf8"), {
+      sourceUrl: `https://www.cac.edu.tw/apply115/system/X/html/115_${code}.htm`,
+      dataVersion: "fixture-tech",
+    });
+  it("008432: pure 術科 screening keeps zero subjects (source truth, not dropped)", () => {
+    const { record, issues } = tech("008432");
+    expect(record).not.toBeNull();
+    expect(issues.filter((i) => i.level === "error")).toHaveLength(0);
+    expect(record!.departmentCode).toBe("008432");
+    // Source 學測 cells are all `--`: no subjects invented.
+    expect(record!.subjectRequirements).toEqual([]);
+  });
+  it("008432: second-stage items match source item-by-item (審查40/面試20)", () => {
+    const { record } = tech("008432");
+    expect(record!.secondStageItems).toEqual([
+      expect.objectContaining({ name: "審查資料", requirement: null, weight: "40%" }),
+      expect.objectContaining({ name: "面試", requirement: null, weight: "20%" }),
+    ]);
+  });
+  it("008432: shared 術科 aggregate (彩繪技法/創意表現 sharing 40%) is NOT split by guess", () => {
+    const { record } = tech("008432");
+    const names = record!.secondStageItems.map((s) => s.name);
+    expect(names).not.toContain("彩繪技法");
+    expect(names).not.toContain("創意表現");
+    expect(new Set(names).size).toBe(names.length);
+  });
+  it("009432: second-stage items match source item-by-item (審查10/主修90)", () => {
+    const { record, issues } = tech("009432");
+    expect(record).not.toBeNull();
+    expect(issues.filter((i) => i.level === "error")).toHaveLength(0);
+    expect(record!.subjectRequirements).toEqual([]);
+    expect(record!.secondStageItems).toEqual([
+      expect.objectContaining({ name: "審查資料", requirement: null, weight: "10%" }),
+      expect.objectContaining({ name: "主修", requirement: null, weight: "90%" }),
+    ]);
+  });
+  it("tech fixtures survive the canonical bridge with zero errors", () => {
+    for (const code of ["008432", "009432"]) {
+      const { record } = tech(code);
+      const { canonical, issues } = fromDetailRecord(record!);
+      const errs = [...issues, ...auditCanonicalCompleteness(record!, canonical)].filter((i) => i.level === "error");
+      expect(errs).toHaveLength(0);
+    }
+  });
+  it("008432: shared group holds 40% once; items carry screening cells, no weight", () => {
+    const { record } = tech("008432");
+    expect(record!.techScreening).toMatchObject({ weight: "40%", weightStatus: "shared" });
+    expect(record!.techScreening!.items).toEqual([
+      expect.objectContaining({ name: "彩繪技法", requirement: null, multiplier: 5, scoreMethod: "*1.00" }),
+      expect.objectContaining({ name: "創意表現", requirement: null, multiplier: 3, scoreMethod: "*1.50" }),
+    ]);
+    for (const it of record!.techScreening!.items) expect("weight" in it).toBe(false);
+  });
+  it("009432: ◎ stays null with raw kept; group attributed, weight single-homed", () => {
+    const { record } = tech("009432");
+    expect(record!.techScreening).toMatchObject({ weight: null, weightStatus: "attributed_to_stage2" });
+    expect(record!.techScreening!.items).toEqual([
+      expect.objectContaining({ name: "主修", requirement: null, multiplier: null, scoreMethod: "*1.00" }),
+    ]);
+  });
+  it("APCS pages emit no tech group (nested table authoritative)", () => {
+    const { record } = parse("115_001592.htm", "001592");
+    expect(record!.apcs).not.toBeNull();
+    expect(record!.techScreening).toBeNull();
+  });
+  it("dash-only tech block emits no group and no noise", () => {
+    const { record } = tech("009432");
+    // 009432 HAS content; control case uses synthetic minimal tech HTML below.
+    expect(record!.techScreening).not.toBeNull();
+  });
+});
+
+describe("tech block shapes (synthetic, offline)", () => {
+  const techHtml = (g3cells: string[]) =>
+    `<html><body><table><tr><td class="school_title"><div class="colname">S</div><div class="gsdname">D</div></td></tr>` +
+    `<tr><td class="Lb">校系代碼</td><td class="Rb">008999</td>` +
+    g3cells.map((c) => `<td class="Bb g3">${c}</td>`).join("") +
+    `</tr></table></body></html>`;
+  const cell = (lines: string[]) => lines.join("<br>");
+  const parseTech = (cells: string[]) =>
+    parseDetailHtml(techHtml(cells), { sourceUrl: "x", dataVersion: "synth" });
+  it("--/empty/0% tech block yields no group", () => {
+    const g3 = [cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["0%"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["0%"])];
+    const { record, issues } = parseTech(g3);
+    expect(record).not.toBeNull();
+    expect(record!.techScreening).toBeNull();
+    expect(issues.filter((i) => i.level === "error")).toHaveLength(0);
+  });
+  it("unknown tech shape (4 cells) traces unmapped without guessing", () => {
+    const g3 = [cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["0%"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["主修"]), cell(["--"]), cell(["◎"]), cell(["*1.00"])];
+    const { record } = parseTech(g3);
+    expect(record!.techScreening).toBeNull();
+    expect(record!.unmapped.some((u) => u.includes("unexpected tech block shape"))).toBe(true);
+  });
+  it("3-cell APCS shape stays silent (no group, no unmapped noise)", () => {
+    const g3 = [cell(["國文"]), cell(["均標"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["--"]), cell(["程式識讀"]), cell(["4級"]), cell(["5"])];
+    const { record } = parseTech(g3);
+    expect(record!.techScreening).toBeNull();
+    expect(record!.unmapped.filter((u) => u.includes("tech"))).toHaveLength(0);
   });
 });

@@ -2,7 +2,7 @@
   "name": "admission-ai",
   "version": "0.1.0",
   "private": true,
-  "description": "台灣大學升學落點預測／決策系統 Predicter — 資料平台基礎",
+  "description": "Admission AI 升學輔助平台 — 官方招生資料建置與分析",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,6 +10,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:hc": "tsx scripts/test-hc-preflight.ts",
+    "seed:test-db": "tsx scripts/seed-test-db.ts",
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx db/migrate.ts",
     "db:seed": "tsx db/seed.ts",
@@ -25,7 +27,11 @@
     "data:import-official-browser": "tsx scripts/import-official-browser.ts",
     "data:build-official-dataset": "tsx scripts/build-official-dataset.ts",
     "data:load-official-admission": "tsx scripts/load-official-admission.ts",
+    "admission:acquire": "tsx scripts/admission-acquire.ts",
+    "admission:queue": "tsx scripts/admission-queue.ts",
     "data:verify-official-admission": "tsx scripts/verify-official-admission.ts",
+    "p4:normalize": "tsx scripts/normalize-admission-115.ts",
+    "scoped:reconcile": "tsx scripts/scoped-reconcile.ts",
     "validate": "tsx scripts/validate.ts"
   },
   "dependencies": {

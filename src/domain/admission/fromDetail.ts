@@ -9,6 +9,7 @@ import type {
   SequenceRule,
   SpecialRequirement,
   SubjectRule,
+  TechScreeningGroup,
 } from "./types";
 
 export interface FromDetailIssue {
@@ -104,6 +105,22 @@ export function fromDetailRecord(record: DetailRecord): { canonical: CanonicalAd
       }))
     : null;
 
+  const techScreening: TechScreeningGroup | null = record.techScreening
+    ? {
+        weight: record.techScreening.weight,
+        weightStatus: record.techScreening.weightStatus,
+        items: record.techScreening.items.map((t, i) => ({
+          position: i + 1,
+          name: t.name,
+          requirement: t.requirement,
+          multiplier: t.multiplier,
+          scoreMethod: t.scoreMethod,
+          sourceText: `${t.name}|${t.requirement ?? ""}|${t.multiplier ?? ""}|${t.scoreMethod ?? ""}`,
+        })),
+        sourceText: `weight=${record.techScreening.weight ?? ""} status=${record.techScreening.weightStatus} items=${record.techScreening.items.map((t) => t.name).join("/")}`,
+      }
+    : null;
+
   const reviewSource = [record.reviewItems ?? "", record.reviewNotes ? `\n說明：${record.reviewNotes}` : ""].join("").trim();
   const reviewRequirements =
     reviewSource !== ""
@@ -165,6 +182,7 @@ export function fromDetailRecord(record: DetailRecord): { canonical: CanonicalAd
     firstStage: { subjectRules, sequences, overallWeight: record.overallFirstStageWeight },
     apcs,
     apcsNote: record.apcs ? record.apcs.note : null,
+    techScreening,
     specialRequirements,
     secondStage: { items, overallWeight: null },
     reviewRequirements,

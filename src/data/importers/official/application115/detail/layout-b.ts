@@ -119,28 +119,101 @@ export function parseLayoutB(root: HTMLElement, opts: ParseOptions): DetailParse
     const n = Math.max(...cols.map((c) => c.length));
     for (let i = 0; i < n; i++) {
       const subject = (cols[0]![i] ?? "").trim();
+      // Second-stage columns are independent of the subject cell: a row with
+      // `--`/unknown subject (pure 術科 screening) can still carry 指定項目.
+      // The item (if any) is resolved first so the unmapped trace below can
+      // record whether this row's screening content survived (covered) or
+      // not — the P4.1d guard keys off uncovered rows only.
+      const itemName = toNull(cols[5]![i] ?? "");
       if (!subject) {
         emptyLines++;
-        continue;
+      } else if (!KNOWN_SUBJECTS.includes(subject)) {
+        // NOT fatal: tech-layout (術科) rows carry `--` here while their
+        // second-stage columns still hold real items (processed below,
+        // independent of subject validity). Recorded for traceability.
+        unmapped.push(
+          itemName
+            ? `grade subject without mapping: ${subject} (second-stage captured: ${itemName})`
+            : `grade subject without mapping: ${subject}`,
+        );
+      } else {
+        const req = toNull(cols[1]![i] ?? "");
+        const mult = toRatio(cols[2]![i] ?? "");
+        const method = toNull(cols[3]![i] ?? "");
+        subjectRequirements.push({ subject, requirement: req, multiplier: mult, scoreMethod: method });
+        rawFields[`grade:${subject}`] = [cols[1]![i] ?? "", cols[2]![i] ?? "", cols[3]![i] ?? ""].join("|");
+        const w = (cols[4]![i] ?? "").replace(/\s+/g, "");
+        if (/%/.test(w)) overallFirstStageWeight = w;
       }
-      if (!KNOWN_SUBJECTS.includes(subject)) {
-        unmapped.push(`grade subject without mapping: ${subject}`);
-        continue;
-      }
-      const req = toNull(cols[1]![i] ?? "");
-      const mult = toRatio(cols[2]![i] ?? "");
-      const method = toNull(cols[3]![i] ?? "");
-      subjectRequirements.push({ subject, requirement: req, multiplier: mult, scoreMethod: method });
-      rawFields[`grade:${subject}`] = [cols[1]![i] ?? "", cols[2]![i] ?? "", cols[3]![i] ?? ""].join("|");
-      const w = (cols[4]![i] ?? "").replace(/\s+/g, "");
-      if (/%/.test(w)) overallFirstStageWeight = w;
-      const itemName = toNull(cols[5]![i] ?? "");
+      // Second-stage columns are independent of the subject cell (resolved
+      // above); an item here only means the row carried screening content.
       if (itemName) {
         secondStageItems.push({ name: itemName, requirement: toNull(cols[6]![i] ?? ""), weight: toNull(cols[7]![i] ?? "") });
         rawFields[`stage2:${itemName}`] = `${cols[6]![i] ?? ""}|${cols[7]![i] ?? ""}`;
       }
     }
     if (emptyLines > 2) unmapped.push(`${emptyLines} empty lines in layout-B grade lists (layout padding)`);
+  }
+
+  // ---- Tech-layout 術科 block (g3 cells past the 8 standard cols:
+  // 術科項目 | 檢定 | 篩選倍率 | 術科成績採計 | 佔比). Shape-gated:
+  // 5 cells = arts variant (parsed below); 3 cells = APCS variant whose
+  // columns duplicate the nested APCS table (skipped, authoritative there);
+  // anything else = unknown shape, traced, never guessed.
+  // The 術科成績佔比 is a genuine 甄選總成績 component. Attribution rule:
+  // exactly one named 術科項目 AND exactly one 佔比 -> the value is held by
+  // the second_stage item (task-A path) and the group records
+  // weight=null/status=attributed_to_stage2. Otherwise the raw aggregate
+  // stays on the group (shared) or stays null (unstated) — never split.
+  let techScreening: DetailRecord["techScreening"] = null;
+  {
+    const rawTech = codeRow ? codeRow.querySelectorAll("td").filter((td) => (td.getAttribute("class") ?? "").split(/\s+/).includes("g3")).slice(8) : [];
+    if (rawTech.length === 5) {
+      const techCols = rawTech.map(linesOf);
+      while (techCols.length < 5) techCols.push([]);
+      const tNames = (techCols[0] ?? []).map((s) => s.trim()).filter((s) => toNull(s) !== null);
+      const tWeights = (techCols[4] ?? []).map((s) => s.trim()).filter((s) => toNull(s) !== null);
+      let attributed: { name: string; weight: string } | null = null;
+      if (tNames.length === 1 && tWeights.length === 1 && /%/.test(tWeights[0]!)) {
+        const tReqLine = (techCols[1] ?? []).map((s) => s.trim()).find((s) => toNull(s) !== null) ?? "";
+        secondStageItems.push({ name: tNames[0]!, requirement: toNull(tReqLine), weight: toNull(tWeights[0]!) });
+        rawFields[`stage2-tech:${tNames[0]}`] = `${tReqLine}|${tWeights[0]!}`;
+        attributed = { name: tNames[0]!, weight: tWeights[0]! };
+      } else if (tNames.length > 0) {
+        unmapped.push(`tech 術科 second-stage not 1:1 attributable (items=${tNames.join("/")} weights=${tWeights.join("/")}); needs modeling decision`);
+      }
+      // Group + screening-role items (positional pairing by visual row;
+      // missing cells stay null, never shifted).
+      const tReq = techCols[1] ?? [];
+      const tMult = techCols[2] ?? [];
+      const tMethod = techCols[3] ?? [];
+      const items = (techCols[0] ?? [])
+        .map((s, i) => ({
+          name: s.trim(),
+          requirement: toNull(tReq[i] ?? ""),
+          multiplier: toRatio(tMult[i] ?? ""),
+          scoreMethod: toNull(tMethod[i] ?? ""),
+        }))
+        .filter((it) => toNull(it.name) !== null);
+      if (items.length > 0) {
+        const singleWeight = tWeights.length === 1 ? tWeights[0]! : null;
+        if (tWeights.length > 1) {
+          unmapped.push(`tech 術科 aggregate weight ambiguous (weights=${tWeights.join("/")}); kept null`);
+        }
+        const weightStatus = attributed ? "attributed_to_stage2" : singleWeight ? "shared" : "unstated";
+        techScreening = {
+          weight: attributed ? null : singleWeight,
+          weightStatus,
+          items,
+        };
+        rawFields["tech:group"] = `weight=${singleWeight ?? ""} status=${weightStatus} items=${items.map((it) => it.name).join("/")}`;
+        for (const it of items) {
+          rawFields[`tech:${it.name}`] = [tReq[items.indexOf(it)] ?? "", tMult[items.indexOf(it)] ?? "", tMethod[items.indexOf(it)] ?? ""].join("|");
+        }
+      }
+    } else if (rawTech.length > 0 && rawTech.length !== 3) {
+      unmapped.push(`unexpected tech block shape: ${rawTech.length} g3 cells past standard 8; skipped`);
+    }
   }
 
   // ---- Tie-break: non-g3, non-label cell in the code row with numbered items ----
@@ -229,20 +302,37 @@ export function parseLayoutB(root: HTMLElement, opts: ParseOptions): DetailParse
   }
 
   // ---- Notes (BASIC-pair remark first, note_ft, else Lb=備註 sibling) ----
+  // A 備註 label with an empty value cell (e.g. 101022) means the source
+  // publishes no notices — recorded explicitly so the audit layer can tell
+  // "present-but-empty" apart from "section missing". Never fabricated.
   let notes: string[] = [];
+  let notesSourceEmpty = false;
   if (remarkText) {
     notes = splitNumberedItems(remarkText);
   } else {
     const noteCell = root.querySelector("td.note_ft");
     if (noteCell) {
+      // Empty value cell (e.g. 101022) vs unparseable prose: only the
+      // former is marked present-but-empty; prose keeps the plain warning.
+      if (cellText(noteCell).trim() === "") notesSourceEmpty = true;
       notes = splitNumberedItems(cellText(noteCell));
     } else {
       const labelCell = root.querySelectorAll("td").find((td) => flatLabel(cellText(td)) === "備註");
-      const sib = labelCell?.nextElementSibling;
-      if (sib && sib.tagName === "TD") notes = splitNumberedItems(cellText(sib as HTMLElement));
+      if (labelCell) {
+        const sib = labelCell?.nextElementSibling;
+        if (sib && sib.tagName === "TD") {
+          if (cellText(sib as HTMLElement).trim() === "") notesSourceEmpty = true;
+          notes = splitNumberedItems(cellText(sib as HTMLElement));
+        } else {
+          notesSourceEmpty = true;
+        }
+      }
     }
   }
-  if (notes.length === 0) warn("section", "no notes found");
+  if (notes.length === 0) {
+    warn("section", "no notes found");
+    if (notesSourceEmpty) unmapped.push("notes section present but empty (no published notices)");
+  }
 
   // ---- Offshore restriction fallback: the label cell can sit in a row of
   // its own (rowspan layout) while the value lives rows below. Pattern-match
@@ -297,6 +387,7 @@ export function parseLayoutB(root: HTMLElement, opts: ParseOptions): DetailParse
     offshoreRestriction,
     notes,
     apcs,
+    techScreening,
     source: "official",
     sourceUrl: opts.sourceUrl,
     retrievedAt: opts.retrievedAt ?? null,

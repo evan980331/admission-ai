@@ -26,6 +26,22 @@ export interface ApcsScreening {
   multiplier: number | null;
 }
 
+export type TechWeightStatus = "shared" | "attributed_to_stage2" | "unstated";
+
+export interface TechScreeningItem {
+  name: string;
+  requirement: string | null;
+  multiplier: number | null;
+  scoreMethod: string | null;
+}
+
+export interface TechScreeningGroup {
+  /** Raw aggregate 佔比; NULL when 1:1-attributed to a second_stage item or unstated. Never split. */
+  weight: string | null;
+  weightStatus: TechWeightStatus;
+  items: TechScreeningItem[];
+}
+
 export interface DetailRecord {
   academicYear: number;
   schoolCode: string;
@@ -57,6 +73,13 @@ export interface DetailRecord {
   notes: string[];
 
   apcs: { items: ApcsScreening[]; note: string | null } | null;
+
+  /**
+   * Arts-variant tech block (13-cell table.tech only; 11-cell APCS-variant
+   * columns duplicate the nested APCS table and are skipped). null when the
+   * page has no substantive tech content — never fabricated.
+   */
+  techScreening: TechScreeningGroup | null;
 
   source: "official";
   sourceUrl: string;
